@@ -1,0 +1,4 @@
+Change Component Footprint: Designator=LED1 Old Footprint=led 1/3w New Footprint=LED-3MM-BLUE
+Change Component Footprint: Designator=LED2 Old Footprint=led 1/3w New Footprint=LED-3MM-BLUE
+Added Member To Class: ClassName=Power Member=Component RL? Relay 10A/12V
+Added Room: Name=Main

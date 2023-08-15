@@ -1,0 +1,3 @@
+Change Component Footprint: Designator=R9 Old Footprint=RES-SMD-0101 New Footprint=RES-SMD-0805
+Added Member To Class: ClassName=Power Member=Component RL? Relay 10A/12V
+Added Room: Name=Power
