@@ -25,7 +25,8 @@ static void MX_GPIO_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_I2C1_Init(void);
 void useBuzz(int i);
-void changeModeSystem();
+void begin_changeModeSystem();
+void changeKeyPass();
 // KEY Function and variabel
 uint8_t isClick = FALL;
 uint8_t keyChar = NULL;
@@ -76,7 +77,7 @@ uint8_t ScanKEY() // Qu?t ph?m v? tra ve mang MAP
 			}
 			if(couter == 3 && click_COL == 0 && coutTime > 30)
 			{
-				changeModeSystem();
+				begin_changeModeSystem();
 			}
 			return KEY_MAP[couter][click_COL];
 		}
@@ -172,7 +173,7 @@ void useBuzz(int n)
 		HAL_Delay(100);
 	}
 }
-void changeModeSystem()
+void begin_changeModeSystem()
 {
 	CLCD_Clear();
 	Print_LCD( 3, 0, "CHANGE PASS");
@@ -183,51 +184,104 @@ void changeModeSystem()
 	Print_LCD( 0, 1, "KEY:");
 	uint8_t key = NULL;
 	char passChange[NUM_PASS+1] = "******\0";
-	uint32_t startTime = HAL_GetTick();
 	uint8_t changeStatus = 0;
 	uint8_t couter_ = 0;
-	
+	uint32_t startTime = HAL_GetTick();
 	while(1)
 	{
 		uint32_t currentTime = HAL_GetTick();
 		if (currentTime - startTime >= 60000)
 			break;
-		key = ScanKEY();
+		key = ScanKEY();		// quet ma tran phim
 		if(key != NULL){
 			if(couter_ < NUM_PASS && key != '#' && key != '*'){
-				passChange[couter_] = key;
+				passChange[couter_] = key;	// gan ky tu vao mang
 				couter_++;
 				CLCD_Clear();
 				Print_LCD( 3, 0, "NHAP MAT KHAU");
 				Print_LCD( 0, 1, "KEY:");
 				Print_LCD( 4, 1, (char *)&passChange[0]);
 			}
-			if(couter_ == NUM_PASS){
+			if(couter_ == NUM_PASS){	// nhap du 6 ky tu
 				if(checkPass((uint8_t *)&passChange[0], (uint8_t *)&truePass[0], NUM_PASS)){
 					// nhap pass dung
 					CLCD_Clear();
 					Print_LCD( 0, 0, "PASS Chinh Xac");
 					changeStatus = 1;
-					HAL_Delay(1000);
+					int j = 0;
+					for(j=0;j<16;j++){
+						Print_LCD( j, 1,"-");
+						HAL_Delay(125);
+					}
 					break;
 				}else{
+					// pas sai
 					CLCD_Clear();
 					Print_LCD( 0, 0, "Sai pass");
 					changeStatus = 0;
+					int j = 0;
 					HAL_Delay(1000);
-					break;
+					Print_LCD( 1, 0, "MOI NHAP KEY");
+					// sai pass ve menu chinh
+					return;
 				}
 			}
 		}
 	}
 	if(changeStatus == 1)
 	{
-		// thay doi thanh cong
+		// Nhap Pass Dung
+		changeKeyPass();
 	}else{
-		// khong thay doi duoc
+		// Pass Sai
 	}
 }
 
+void changeKeyPass()
+{
+	CLCD_Clear();
+	//Print_LCD( 0, 0, "Nhap Mat Ma Moi");
+	uint8_t key = NULL;
+	char passChange[NUM_PASS+1] = "******\0";
+	//uint8_t changeStatus = 0;
+	uint8_t couter_ = 0;
+	uint32_t startTime = HAL_GetTick();
+	Print_LCD( 3, 0, "NEW PASS");
+	Print_LCD( 0, 1, "KEY:");
+	Print_LCD( 4, 1, (char *)&passChange[0]);
+	while(1)
+	{
+		uint32_t currentTime = HAL_GetTick();
+		if (currentTime - startTime >= 60000)
+			break;
+		key = ScanKEY();		// quet ma tran phim
+		if(key != NULL){
+			if(couter_ < NUM_PASS && key != '#' && key != '*'){
+				passChange[couter_] = key;	// gan ky tu vao mang
+				couter_++;
+				CLCD_Clear();
+				Print_LCD( 3, 0, "NEW PASS");
+				Print_LCD( 0, 1, "KEY:");
+				Print_LCD( 4, 1, (char *)&passChange[0]);
+			}
+			if(couter_ == NUM_PASS){
+				// nhap xong 6 ky tu
+				CLCD_Clear();
+				Print_LCD(0,0,"Xac Nhan : (*)\0");
+				Print_LCD( 0, 1, "KEY:");
+				Print_LCD( 4, 1, (char *)&passChange[0]);
+				while(ScanKEY() != '*'){}
+				// save
+				strcpy(truePass,passChange);
+				Print_LCD(0,0," thanh cong\0");
+				return;
+			}
+		}
+	}
+	CLCD_Clear();
+	Print_LCD( 1, 0, "MOI NHAP KEY");
+	
+}
 //==============================
 /**
   * @brief  The application entry point.
