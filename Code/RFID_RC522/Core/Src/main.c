@@ -15,7 +15,7 @@
 I2C_HandleTypeDef hi2c1;
 
 SPI_HandleTypeDef hspi2;
-uint8_t CardID[5];
+
 uint8_t Status=0;
 /* USER CODE END PV */
 
@@ -27,6 +27,7 @@ static void MX_I2C1_Init(void);
 void useBuzz(int i);
 void begin_changeModeSystem();
 void changeKeyPass();
+void gotoMenu();
 // KEY Function and variabel
 uint8_t isClick = FALL;
 uint8_t keyChar = NULL;
@@ -77,7 +78,7 @@ uint8_t ScanKEY() // Qu?t ph?m v? tra ve mang MAP
 			}
 			if(couter == 3 && click_COL == 0 && coutTime > 30)
 			{
-				begin_changeModeSystem();
+				gotoMenu();
 			}
 			return KEY_MAP[couter][click_COL];
 		}
@@ -131,6 +132,23 @@ void Print_LCD( uint8_t x, uint8_t y, char *string)
 	CLCD_WriteString(string);
 }
 //==================
+// RFID Function and variabel
+uint8_t CardID[5];
+uint8_t buffer_CardID[5];
+uint8_t true_CardID[5] = {0x13,0x62,0x62,0x1a,0x09};
+void addCard_RFID(){}
+void delCard_RFID(){}
+uint8_t compareCard_RFID(uint8_t* TagType1,uint8_t* TagType2)
+{
+	int state = 1;
+	int cout;
+	for(cout=0;cout<5;cout++){
+		if(TagType1[cout] != TagType2[cout])
+			state = 0;
+	}
+	return state;
+}
+//=====================================================
 // Password Function and variabel
 char couter_pass = 0;
 char enRFID = 0;
@@ -140,13 +158,14 @@ char truePass[NUM_PASS+1] = "123456\0";
 char completePass = FALL;
 uint8_t checkPass(uint8_t *s1, uint8_t *s2, uint8_t num)
 {
+	int state = 1;
 	uint8_t couter;
 	for (couter = 0; couter < num; couter++)
 	{
 		if (s1[couter] != s2[couter])
-			return 0;
+			state =  0;
 	}
-	return 1;
+	return state;
 }
 //======================
 // Function 
@@ -171,6 +190,53 @@ void useBuzz(int n)
 		HAL_Delay(200);
 		BUZZ_OFF;
 		HAL_Delay(100);
+	}
+}
+void gotoMenu()
+{
+	HAL_GPIO_WritePin(LCD_PORT,LCD_LED,GPIO_PIN_SET);
+	CLCD_Clear();
+	Print_LCD( 0, 0, "1. CHANGE PASS");
+	Print_LCD( 0, 1, "2. CHANGE RFID");
+	uint32_t startTime = HAL_GetTick();
+	uint8_t key = NULL;
+	uint8_t state = 0;
+	while(1)
+	{
+		uint32_t currentTime = HAL_GetTick();
+		if (currentTime - startTime >= 60000)
+			break;
+		key = ScanKEY();		// quet ma tran phim
+		if(key != NULL && state == 0){
+			if(key == '1'){
+				key = NULL;
+				begin_changeModeSystem();
+				break;
+			}
+			else if(key == '2'){	// rfid
+				state = 1;
+				CLCD_Clear();
+				Print_LCD( 0, 0, "1. ADD CARD RFID");
+				Print_LCD( 0, 1, "2. DEL CARD RFID");
+				key = NULL;
+			}
+		}
+		if(key != NULL && state == 1){
+			if(key == '1'){
+				// CLCD_Clear();
+				// Print_LCD( 0, 0, "---ADD CARD RFID");
+				addCard_RFID();
+				break;
+				// add card
+			}else if(key == '2'){
+				// CLCD_Clear();
+				// Print_LCD( 0, 0, "---DEL CARD RFID");
+				delCard_RFID();
+				break;
+				// del card
+			}
+		}
+		key = NULL;		
 	}
 }
 void begin_changeModeSystem()
@@ -219,7 +285,7 @@ void begin_changeModeSystem()
 					CLCD_Clear();
 					Print_LCD( 0, 0, "Sai pass");
 					changeStatus = 0;
-					int j = 0;
+					//int j = 0;
 					HAL_Delay(1000);
 					Print_LCD( 1, 0, "MOI NHAP KEY");
 					// sai pass ve menu chinh
@@ -236,7 +302,6 @@ void begin_changeModeSystem()
 		// Pass Sai
 	}
 }
-
 void changeKeyPass()
 {
 	CLCD_Clear();
@@ -356,28 +421,52 @@ int main(void)
 			}
 			isOnLedLCD = FALL;
 		}  
-         Status = TM_MFRC522_Request(PICC_REQALL, CardID);
-         if (Status != MI_OK)
-         {
-	          continue;
-         }else{
+		// code rfid
+        Status = TM_MFRC522_Request(PICC_REQALL, buffer_CardID);
+        if (Status != MI_OK)
+        {
+	        continue;
+        }else{
 					
-				 }
-         Status = TM_MFRC522_Anticoll(CardID);
-         if (Status != MI_OK)
-         {    
+		}
+        Status = TM_MFRC522_Anticoll(buffer_CardID);
+        if (Status != MI_OK)
+        {    
             continue;    
-         }else{
-					isOnLedLCD = TRUE;
-					completePass = TRUE;
-					CLCD_Clear();
-					Print_LCD( 3, 0, "CO THE RFID");
-					char PrintbufferRFID[16];
-					completePass = TRUE;
-					sprintf(&PrintbufferRFID[0],"%x-%x-%x-%x-%x",CardID[0], CardID[1], CardID[2], CardID[3], CardID[4]);			
-					Print_LCD(1,1,&PrintbufferRFID[0]);
-					//while((Status != MI_OK));
-				 }
+        }else{
+			CardID[0] = buffer_CardID[0];
+			CardID[1] = buffer_CardID[1];
+			CardID[2] = buffer_CardID[2];
+			CardID[3] = buffer_CardID[3];
+			CardID[4] = buffer_CardID[4];
+
+			HAL_GPIO_WritePin(LCD_PORT,LCD_LED,GPIO_PIN_SET);
+			completePass = TRUE;		// để tắt đèn màn hình
+			CLCD_Clear();
+			Print_LCD( 3, 0, "CO THE RFID");
+			char PrintbufferRFID[16];
+			completePass = TRUE;
+			sprintf(&PrintbufferRFID[0],"%x-%x-%x-%x-%x",CardID[0], CardID[1], CardID[2], CardID[3], CardID[4]);			
+			Print_LCD(1,1,&PrintbufferRFID[0]);
+			useBuzz(3);
+			int result = compareCard_RFID(CardID,true_CardID);
+			if(result == 1){	// true card
+				CLCD_Clear();
+				sprintf(&PrintbufferRFID[0],"%x-%x-%x-%x-%x",CardID[0], CardID[1], CardID[2], CardID[3], CardID[4]);			
+				Print_LCD(1,0,&PrintbufferRFID[0]);
+				Print_LCD( 0, 1, "TRUE CARD-> OPEN");
+				useBuzz(3);
+			}else{			// fall card
+				CLCD_Clear();
+				sprintf(&PrintbufferRFID[0],"%x-%x-%x-%x-%x",CardID[0], CardID[1], CardID[2], CardID[3], CardID[4]);			
+				Print_LCD(1,0,&PrintbufferRFID[0]);
+				Print_LCD( 3, 1, "FALL CARD");
+				BUZZ_ON;
+				HAL_Delay(1000);
+				BUZZ_OFF;
+			}
+			//while((Status != MI_OK));
+		}
   }
 }
 
