@@ -1,0 +1,9 @@
+Added Component: Designator=KeyPad(MatrixKeyPad(3x4))
+Added Pin To Net: NetName=Hang1 Pin=KeyPad-1
+Added Pin To Net: NetName=Hang2 Pin=KeyPad-2
+Added Pin To Net: NetName=Hang3 Pin=KeyPad-3
+Added Pin To Net: NetName=Hang4 Pin=KeyPad-4
+Added Pin To Net: NetName=Cot1 Pin=KeyPad-5
+Added Pin To Net: NetName=Cot2 Pin=KeyPad-6
+Added Pin To Net: NetName=Cot3 Pin=KeyPad-7
+Added Member To Class: ClassName=mAIN 2 Member=Component KeyPad MatrixKeyPad 3x4

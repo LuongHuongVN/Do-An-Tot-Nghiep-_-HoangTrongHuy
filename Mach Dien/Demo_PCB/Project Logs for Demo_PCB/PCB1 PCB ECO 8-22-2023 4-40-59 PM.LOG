@@ -1,0 +1,38 @@
+Removed Pin From Net: NetName=GND Pin=LCD1-1
+Removed Pin From Net: NetName=+5 Pin=LCD1-2
+Removed Pin From Net: NetName=RS Pin=LCD1-4
+Removed Pin From Net: NetName=RW Pin=LCD1-5
+Removed Pin From Net: NetName=EN Pin=LCD1-6
+Removed Pin From Net: NetName=D4 Pin=LCD1-11
+Removed Pin From Net: NetName=D5 Pin=LCD1-12
+Removed Pin From Net: NetName=D6 Pin=LCD1-13
+Removed Pin From Net: NetName=D7 Pin=LCD1-14
+Removed Pin From Net: NetName=+5 Pin=LCD1-15
+Removed Member From Class: ClassName=mAIN 2 Member=LCD1
+Removed Member From Class: ClassName=Main Member=R8
+Removed Member From Class: ClassName=Main Member=R9
+Added Component: Designator=LCD?(LCD16X2)
+Add component (AddParameter): Name = "Value"; Value = "LCD16x2A"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=GND Pin=LCD?-1
+Added Pin To Net: NetName=+5 Pin=LCD?-2
+Added Pin To Net: NetName=RS Pin=LCD?-4
+Added Pin To Net: NetName=RW Pin=LCD?-5
+Added Pin To Net: NetName=EN Pin=LCD?-6
+Added Pin To Net: NetName=D4 Pin=LCD?-11
+Added Pin To Net: NetName=D5 Pin=LCD?-12
+Added Pin To Net: NetName=D6 Pin=LCD?-13
+Added Pin To Net: NetName=D7 Pin=LCD?-14
+Added Pin To Net: NetName=+5 Pin=LCD?-15
+Added Pin To Net: NetName=NetLCD?_3 Pin=LCD?-3
+Added Pin To Net: NetName=NetLCD?_3 Pin=VR1-2
+Added Net: Name=NetLCD?_3
+Added Pin To Net: NetName=NetLCD?_16 Pin=LCD?-16
+Added Pin To Net: NetName=NetLCD?_16 Pin=Q2-2
+Added Net: Name=NetLCD?_16
+Added Member To Class: ClassName=mAIN 2 Member=Component LCD? LCD16x2A
+Added Member To Class: ClassName=Main Member=Component R1 Res
+Added Member To Class: ClassName=Main Member=Component R2 Res
+Added Member To Class: ClassName=Main Member=Component R4 Res
+Added Member To Class: ClassName=Main Member=Component R6 Res
+Added Member To Class: ClassName=Main Member=Component R7 Res
+Added Room: Name=Main

@@ -1,0 +1,7 @@
+Change Component Footprint: Designator=R5 Old Footprint=RES-SMD-0805 New Footprint=R1/4W
+Change Component Comment : Designator=R5 Old Comment=Res New Comment=1k
+Change component parameters: Designator = "R5" ("R5"); Footprint = "RES-SMD-0805"; UniqueID = "\EOSXWBFB" ("\EOSXWBFB")
+Change component parameters (AddParameter): Name = "Value"; Value = "R1/4W - 1K"; VariantName = "[No Variations]"
+Added Room: Name=mAIN 2
+Added Room: Name=Main
+Added Room: Name=Power

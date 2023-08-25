@@ -1,0 +1,16 @@
+Removed Pin From Net: NetName=Buzz Pin=R9-1
+Removed Pin From Net: NetName=NetQ3_3 Pin=R9-2
+Change Component Footprint: Designator=R9 Old Footprint=RES-SMD-0805 New Footprint=RES-1/4W-SMALL
+Change Component Comment : Designator=R9 Old Comment=Res-SMD New Comment=Res
+Change Component Designator: OldDesignator=KeyPad NewDesignator=KeyPad1
+Change Component Designator: OldDesignator=LCD? NewDesignator=LCD1
+Change component parameters: Designator = "R9" ("R9"); Footprint = "RES-SMD-0805"; UniqueID = "\HTHTJBYS" ("\HTHTJBYS")
+Change component parameters (AddParameter): Name = "Class"; Value = "Passive"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "Manufacturer"; Value = "Generic Components"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "Published"; Value = "08/06/2000"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "Publisher"; Value = "Altium Hobart Technology Centre"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "SubClass"; Value = "R"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=NetQ3_3 Pin=R9-1
+Added Pin To Net: NetName=Buzz Pin=R9-2
+Change Net Name : Old Net Name=NetLCD?_3 New Net Name=NetLCD1_3
+Change Net Name : Old Net Name=NetLCD?_16 New Net Name=NetLCD1_16

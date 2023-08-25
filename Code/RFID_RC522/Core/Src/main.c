@@ -136,8 +136,126 @@ void Print_LCD( uint8_t x, uint8_t y, char *string)
 uint8_t CardID[5];
 uint8_t buffer_CardID[5];
 uint8_t true_CardID[5] = {0x13,0x62,0x62,0x1a,0x09};
-void addCard_RFID(){}
-void delCard_RFID(){}
+void addCard_RFID()
+{
+	CLCD_Clear();
+	Print_LCD(0,0,"Nhap The Moi\0");
+	Print_LCD(0,1,"WAINT\0");
+	int graDot = 0;		// hiển thị dấu chấm
+	uint32_t startTime = HAL_GetTick();
+	uint8_t _CardID[5];
+	HAL_GPIO_WritePin(LCD_PORT,LCD_LED,GPIO_PIN_SET);
+	while(1)	
+	{
+		uint32_t currentTime = HAL_GetTick();
+		if (currentTime - startTime >= 60000){
+			CLCD_Clear();
+			Print_LCD(0,0,"--- TIME OUT ---\0");
+			useBuzz(5);
+			CLCD_Clear();
+			break;
+		}
+		if((currentTime - startTime)/1000 == graDot)
+		{
+			Print_LCD(5+graDot,1,"-");
+			graDot = ((currentTime - startTime)/1000)+1;
+		}
+		uint8_t status;
+		status = TM_MFRC522_Request(PICC_REQALL, _CardID);
+        if (status != MI_OK)
+        {
+	        continue;
+        }else{
+					
+		}
+        status = TM_MFRC522_Anticoll(_CardID);
+        if (status != MI_OK)
+        {    
+            continue;    
+        }else{
+			char PrintbufferRFID[16];
+			sprintf(&PrintbufferRFID[0],"%x-%x-%x-%x-%x",_CardID[0], _CardID[1], _CardID[2], _CardID[3], _CardID[4]);			
+			Print_LCD(0,0,&PrintbufferRFID[0]);
+			Print_LCD(0,1,"OK(*)   CANCE(#)\0");
+			while(1){
+				char key = ScanKEY();
+				if(key == '*'){
+					//strcpy(truePass,passChange);	// save pass
+					// truoc khi them the can kiem tra lai xem the nay da ton tai hay chua
+					CLCD_Clear();
+					int cout;
+					for(cout=0;cout<5;cout++){
+						true_CardID[cout] = _CardID[cout];
+					}
+					Print_LCD(0,0," Thanh Cong\0");
+					break;
+				}else if(key == '#'){
+					CLCD_Clear();
+					Print_LCD(0,0,"Huy Thay Doi\0");
+					break;		
+				}
+			}
+			return;
+		}
+	}
+}
+void delCard_RFID()
+{
+	CLCD_Clear();
+	//Print_LCD(0,0,"XOA THE\0");
+	Print_LCD(0,0,"NHAP THE CAN XOA\0");
+	int graDot = 0;		// hiển thị dấu chấm
+	uint32_t startTime = HAL_GetTick();
+	uint8_t _CardID[5];
+	HAL_GPIO_WritePin(LCD_PORT,LCD_LED,GPIO_PIN_SET);
+	while(1)	
+	{
+		uint32_t currentTime = HAL_GetTick();
+		if (currentTime - startTime >= 60000){
+			CLCD_Clear();
+			Print_LCD(0,0,"--- TIME OUT ---\0");
+			useBuzz(5);
+			CLCD_Clear();
+			break;
+		}
+		uint8_t status = TM_MFRC522_Request(PICC_REQALL, _CardID);
+        if (status != MI_OK)
+        {
+	        continue;
+        }else{
+					
+				}
+        status = TM_MFRC522_Anticoll(_CardID);
+        if (status != MI_OK)
+        {    
+            continue;    
+        }else{
+			char PrintbufferRFID[16];
+			sprintf(&PrintbufferRFID[0],"%x-%x-%x-%x-%x",_CardID[0], _CardID[1], _CardID[2], _CardID[3], _CardID[4]);			
+			Print_LCD(0,0,&PrintbufferRFID[0]);
+			Print_LCD(0,1,"DEL(*)  CANCE(#)\0");
+			while(1){
+				char key = ScanKEY();
+				if(key == '*'){
+					//strcpy(truePass,passChange);	// save pass
+					// truoc khi them the can kiem tra lai xem the nay da ton tai hay chua
+					CLCD_Clear();
+					int cout;
+					for(cout=0;cout<5;cout++){
+						true_CardID[cout] = 0;
+					}
+					Print_LCD(0,0," Thanh Cong\0");
+					break;
+				}else if(key == '#'){
+					CLCD_Clear();
+					Print_LCD(0,0,"Huy Thay Doi\0");
+					break;		
+				}
+			}
+			return;
+		}
+	}
+}
 uint8_t compareCard_RFID(uint8_t* TagType1,uint8_t* TagType2)
 {
 	int state = 1;
@@ -332,14 +450,24 @@ void changeKeyPass()
 			if(couter_ == NUM_PASS){
 				// nhap xong 6 ky tu
 				CLCD_Clear();
-				Print_LCD(0,0,"Xac Nhan : (*)\0");
-				Print_LCD( 0, 1, "KEY:");
-				Print_LCD( 4, 1, (char *)&passChange[0]);
-				while(ScanKEY() != '*'){}
-				// save
-				strcpy(truePass,passChange);
-				Print_LCD(0,0," thanh cong\0");
+				Print_LCD( 0, 1,"OK(*)   CANCE(#)\0");
+				Print_LCD( 0, 0,"KEY:");
+				Print_LCD( 4, 0,(char *)&passChange[0]);
+				while(1){
+					char key = ScanKEY();
+					if(key == '*'){
+						strcpy(truePass,passChange);	// save pass
+						Print_LCD(0,0," Thanh Cong\0");
+						break;
+					}else if(key == '#'){
+					
+						Print_LCD(0,0,"Huy Thay Doi\0");
+						break;		
+					}
+				}
 				return;
+				// save
+				
 			}
 		}
 	}
@@ -348,6 +476,10 @@ void changeKeyPass()
 	
 }
 //==============================
+// ROM Function and variabel
+struct AT24Cxx rom;
+
+//===================================================
 /**
   * @brief  The application entry point.
   * @retval int
@@ -363,11 +495,21 @@ int main(void)
 	Config_LCD();
 	Connfig_KEY_Pin();
 	CLCD_Init(16,2);
-	CLCD_Clear();	
-	Print_LCD( 1, 0, "MOI NHAP KEY");
+	
+	AT24Cxx_Init(&rom,&hi2c1,0xA0,32);
+	AT24_write(&rom,0,123);
+	HAL_Delay(10);
+	if(AT24_read(&rom,0)!=123)
+	{
+		CLCD_Clear();	
+		Print_LCD( 1, 0, "ERROR EPROM");
+		useBuzz(5);
+	}
 	//Print_LCD(0,0,"Hello");
 	TM_MFRC522_Init();
 	useBuzz(2);
+	CLCD_Clear();	
+	Print_LCD( 1, 0, "MOI NHAP KEY");
   while (1)
   {
 		keyChar = ScanKEY();

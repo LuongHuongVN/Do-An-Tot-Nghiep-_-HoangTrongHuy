@@ -1,0 +1,4 @@
+Removed Pin From Net: NetName=LED LCD Pin=P2-20
+Removed Pin From Net: NetName=Buzz Pin=P2-24
+Added Pin To Net: NetName=Buzz Pin=P2-25
+Added Pin To Net: NetName=LED LCD Pin=P2-26

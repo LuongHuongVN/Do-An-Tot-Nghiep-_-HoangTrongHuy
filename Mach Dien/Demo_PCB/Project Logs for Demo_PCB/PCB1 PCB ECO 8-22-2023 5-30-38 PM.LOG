@@ -1,0 +1,15 @@
+Removed Pin From Net: NetName=Hang4 Pin=U1-5
+Removed Pin From Net: NetName=Hang3 Pin=U1-6
+Removed Pin From Net: NetName=Hang2 Pin=U1-7
+Removed Pin From Net: NetName=Hang1 Pin=U1-8
+Removed Pin From Net: NetName=Cot3 Pin=U1-11
+Removed Pin From Net: NetName=Cot1 Pin=U1-13
+Added Pin To Net: NetName=Hang1 Pin=U1-5
+Added Pin To Net: NetName=Hang2 Pin=U1-6
+Added Pin To Net: NetName=Hang3 Pin=U1-7
+Added Pin To Net: NetName=Hang4 Pin=U1-8
+Added Pin To Net: NetName=Cot1 Pin=U1-11
+Added Pin To Net: NetName=Cot3 Pin=U1-13
+Added Room: Name=mAIN 2
+Added Room: Name=Main
+Added Room: Name=Power

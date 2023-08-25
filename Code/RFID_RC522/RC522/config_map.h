@@ -18,11 +18,10 @@ Bàn phím :
     Cột 2 B4
     Cột 3 B3
 RFID :
-rst:A12
     CE : B12
     SCK : B13
-    MOSI : B14
-    MISO : B15
+    MOSI : B15
+    MISO : B14
 LCD:
     RS : A0
     RW : A1
@@ -65,8 +64,8 @@ RELAY: B8
 #define RFID_PORT GPIOB
 #define RFID_CE_PIN GPIO_PIN_12
 #define RFID_SCK_PIN GPIO_PIN_13
-#define RFID_MOSI_PIN GPIO_PIN_14
-#define RFID_MISO_PIN GPIO_PIN_15
+#define RFID_MOSI_PIN GPIO_PIN_15
+#define RFID_MISO_PIN GPIO_PIN_14
 
 #define RFID_PORT_RST GPIOA
 #define RFID_RST_PIN GPIO_PIN_12
