@@ -127,7 +127,14 @@ void TM_MFRC522_AntennaOff(void) {
 }
 
 void TM_MFRC522_Reset(void) {
+	//PCD_WriteRegister(CommandReg, PCD_SoftReset);	// Issue the SoftReset command.
 	TM_MFRC522_WriteRegister(MFRC522_REG_COMMAND, PCD_RESETPHASE);
+	uint8_t count = 0;
+	do {
+		// Wait for the PowerDown bit in CommandReg to be cleared (max 3x50ms)
+		HAL_Delay(50);
+	} while ((TM_MFRC522_ReadRegister(MFRC522_REG_COMMAND) & (1 << 4)) && (++count) < 3);
+	
 }
 
 TM_MFRC522_Status_t TM_MFRC522_Request(uint8_t reqMode, uint8_t* TagType) {

@@ -1,4 +1,4 @@
-
+#include "stm32f1xx_hal.h"
 #include "main.h"
 #include "LCD_I2C.h"
 #include "config_map.h"
@@ -6,11 +6,23 @@
 #include "RC522.h"
 #include "string.h"
 #include "stdio.h"
+#include "stdint.h"
 #define TRUE 1
 #define FALL 0
 #define NUM_PASS 6
+#define ADDRESS_PASS_START 10
+#define ADDRESS_PASS_END 10
 
+#define ADDRESS_RFID_START 10
+#define ADDRESS_RFID_END 10
+#define ADDRESS_RFID_LEN 5
 #define SYS_MAIN 0
+
+#define PASS_ADR_START 10
+#define PASS_ADR_END 20
+#define RFID_ADR_START 20
+#define RFID_ADR_END 50
+#define RFID_NUM 5
 
 I2C_HandleTypeDef hi2c1;
 
@@ -25,9 +37,31 @@ static void MX_GPIO_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_I2C1_Init(void);
 void useBuzz(int i);
-void begin_changeModeSystem();
+void begin_gotoMenu();
 void changeKeyPass();
 void gotoMenu();
+void getPass(char pass[]);
+uint8_t savePass(char pass[]);
+uint8_t getCard_RFID(uint8_t InCard[],uint16_t adr);
+uint8_t checkCardRfid(uint8_t InCard[]);
+uint16_t findEmtyAdrRfid();
+uint8_t saveCardRfid(uint8_t InCard[]);
+uint8_t delCardRfid(uint8_t InCard[]);
+void debugROM();
+// Other
+
+void config_GPIO_Other()
+{
+	// relay
+	GPIO_InitTypeDef GPIO_Key = {0};
+	GPIO_Key.Pin = RELAY_PIN|LED_RED_PIN|LED_GREEN_PIN|BUZZ_PIN|RFID_CE_PIN;
+	GPIO_Key.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_Key.Pull = GPIO_NOPULL;
+	GPIO_Key.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(RELAY_PORT, &GPIO_Key);
+	// led
+	// buzz
+}
 // KEY Function and variabel
 uint8_t isClick = FALL;
 uint8_t keyChar = NULL;
@@ -61,7 +95,7 @@ uint8_t ScanKEY() // Qu?t ph?m v? tra ve mang MAP
 	for (couter = 0; couter < 4; couter++)
 	{
 		HAL_GPIO_WritePin(KEY_ROW_PORT, PIN_OUT_SCAN[couter], GPIO_PIN_SET);
-		if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5))
+		if (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL1_PIN))
 		{
 			BUZZ_ON;
 			HAL_Delay(50);
@@ -69,7 +103,7 @@ uint8_t ScanKEY() // Qu?t ph?m v? tra ve mang MAP
 			click_COL = 0;
 			BUZZ_OFF;
 			int coutTime = 0;
-			while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5)){
+			while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL1_PIN)){
 				coutTime++;
 				HAL_Delay(50);
 				if(coutTime>30)
@@ -78,31 +112,31 @@ uint8_t ScanKEY() // Qu?t ph?m v? tra ve mang MAP
 			}
 			if(couter == 3 && click_COL == 0 && coutTime > 30)
 			{
-				gotoMenu();
+				begin_gotoMenu();
 			}
 			return KEY_MAP[couter][click_COL];
 		}
-		else if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4))
+		else if (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL2_PIN))
 		{
 			BUZZ_ON;
 			HAL_Delay(50);
 			isClick = TRUE;
 			click_COL = 1;
 			BUZZ_OFF;
-			while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4)){}
+			while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL2_PIN)){}
 
 			return KEY_MAP[couter][click_COL];
 				
 			//break;
 		}
-		else if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_3))
+		else if (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL3_PIN))
 		{
 			BUZZ_ON;
 			HAL_Delay(50);
 			isClick = TRUE;
 			click_COL = 2;
 			BUZZ_OFF;
-			while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_3)){}
+			while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL3_PIN)){}
 			
 			return KEY_MAP[couter][click_COL];
 			//break;
@@ -135,7 +169,7 @@ void Print_LCD( uint8_t x, uint8_t y, char *string)
 // RFID Function and variabel
 uint8_t CardID[5];
 uint8_t buffer_CardID[5];
-uint8_t true_CardID[5] = {0x13,0x62,0x62,0x1a,0x09};
+uint8_t true_CardID[5];
 void addCard_RFID()
 {
 	CLCD_Clear();
@@ -155,7 +189,7 @@ void addCard_RFID()
 			CLCD_Clear();
 			break;
 		}
-		if((currentTime - startTime)/1000 == graDot)
+		if((currentTime - startTime)/1000 == graDot)	// cai nay de chay hieu ung
 		{
 			Print_LCD(5+graDot,1,"-");
 			graDot = ((currentTime - startTime)/1000)+1;
@@ -182,12 +216,22 @@ void addCard_RFID()
 				if(key == '*'){
 					//strcpy(truePass,passChange);	// save pass
 					// truoc khi them the can kiem tra lai xem the nay da ton tai hay chua
-					CLCD_Clear();
-					int cout;
-					for(cout=0;cout<5;cout++){
-						true_CardID[cout] = _CardID[cout];
-					}
-					Print_LCD(0,0," Thanh Cong\0");
+					
+					// int cout;
+					// for(cout=0;cout<5;cout++){
+					// 	true_CardID[cout] = _CardID[cout];
+					// }
+					debugROM();
+					saveCardRfid(_CardID);
+					debugROM();
+					// if(saveCardRfid(_CardID)==1){
+					// 	CLCD_Clear();
+					// 	Print_LCD(0,0," Thanh Cong\0");
+					// }else{
+					// 	CLCD_Clear();
+					// 	Print_LCD(0,0,"Luu The FALL\0");
+					// }
+					
 					break;
 				}else if(key == '#'){
 					CLCD_Clear();
@@ -239,12 +283,7 @@ void delCard_RFID()
 				if(key == '*'){
 					//strcpy(truePass,passChange);	// save pass
 					// truoc khi them the can kiem tra lai xem the nay da ton tai hay chua
-					CLCD_Clear();
-					int cout;
-					for(cout=0;cout<5;cout++){
-						true_CardID[cout] = 0;
-					}
-					Print_LCD(0,0," Thanh Cong\0");
+					delCardRfid(_CardID);
 					break;
 				}else if(key == '#'){
 					CLCD_Clear();
@@ -272,8 +311,9 @@ char couter_pass = 0;
 char enRFID = 0;
 char pass[NUM_PASS+1] = "******\0";
 char define_pass[NUM_PASS+1] = "******\0";
-char truePass[NUM_PASS+1] = "123456\0";
+char truePass[NUM_PASS+1] = "      \0";
 char completePass = FALL;
+uint8_t arayDebugROM[50];
 uint8_t checkPass(uint8_t *s1, uint8_t *s2, uint8_t num)
 {
 	int state = 1;
@@ -292,12 +332,19 @@ uint32_t lastTimeTruePass = 0;
 uint8_t modeSystem = 0;
 void Open()
 {
-	LED_BLUE_ON;
-
+//	LED_BLUE_ON;
+	CLCD_Clear();
+	Print_LCD( 4, 0, "OPEN DOOR");
+	RELAY_ON;
+	HAL_Delay(2000);
+	RELAY_OFF;
+	CLCD_Clear();
 }
 void Close()
 {
-	
+	CLCD_Clear();
+	Print_LCD( 4, 0, "PASS ERROR");
+	RELAY_OFF;
 }
 void useBuzz(int n)
 {
@@ -328,7 +375,7 @@ void gotoMenu()
 		if(key != NULL && state == 0){
 			if(key == '1'){
 				key = NULL;
-				begin_changeModeSystem();
+				changeKeyPass();
 				break;
 			}
 			else if(key == '2'){	// rfid
@@ -357,15 +404,12 @@ void gotoMenu()
 		key = NULL;		
 	}
 }
-void begin_changeModeSystem()
+void begin_gotoMenu()
 {
 	CLCD_Clear();
-	Print_LCD( 3, 0, "CHANGE PASS");
+	Print_LCD( 3, 0, "Go To Menu");
 	HAL_GPIO_WritePin(LCD_PORT,LCD_LED,GPIO_PIN_SET);
-	useBuzz(5);
-	CLCD_Clear();
-	Print_LCD( 3, 0, "NHAP MAT KHAU");
-	Print_LCD( 0, 1, "KEY:");
+	Print_LCD( 0, 1, "KEY:******\0");
 	uint8_t key = NULL;
 	char passChange[NUM_PASS+1] = "******\0";
 	uint8_t changeStatus = 0;
@@ -382,21 +426,13 @@ void begin_changeModeSystem()
 				passChange[couter_] = key;	// gan ky tu vao mang
 				couter_++;
 				CLCD_Clear();
-				Print_LCD( 3, 0, "NHAP MAT KHAU");
+				Print_LCD( 3, 0, "Go To Menu");
 				Print_LCD( 0, 1, "KEY:");
 				Print_LCD( 4, 1, (char *)&passChange[0]);
 			}
 			if(couter_ == NUM_PASS){	// nhap du 6 ky tu
 				if(checkPass((uint8_t *)&passChange[0], (uint8_t *)&truePass[0], NUM_PASS)){
-					// nhap pass dung
-					CLCD_Clear();
-					Print_LCD( 0, 0, "PASS Chinh Xac");
 					changeStatus = 1;
-					int j = 0;
-					for(j=0;j<16;j++){
-						Print_LCD( j, 1,"-");
-						HAL_Delay(125);
-					}
 					break;
 				}else{
 					// pas sai
@@ -415,7 +451,7 @@ void begin_changeModeSystem()
 	if(changeStatus == 1)
 	{
 		// Nhap Pass Dung
-		changeKeyPass();
+		gotoMenu();
 	}else{
 		// Pass Sai
 	}
@@ -456,7 +492,9 @@ void changeKeyPass()
 				while(1){
 					char key = ScanKEY();
 					if(key == '*'){
-						strcpy(truePass,passChange);	// save pass
+						//strcpy(truePass,passChange);	// save pass
+						savePass(passChange);
+						getPass(truePass);
 						Print_LCD(0,0," Thanh Cong\0");
 						break;
 					}else if(key == '#'){
@@ -478,34 +516,241 @@ void changeKeyPass()
 //==============================
 // ROM Function and variabel
 struct AT24Cxx rom;
+// getPass
+void getPass(char pass[])
+{
+	uint16_t couter;
+	for(couter = 0;couter < 0 + NUM_PASS ;couter++)
+		pass[couter] = AT24_read(&rom,couter + PASS_ADR_START);
+}
+uint8_t savePass(char pass[])
+{
+	uint16_t couter;
+	for(couter = 0;couter < 0 + NUM_PASS ;couter++){
+		AT24_write(&rom,couter + PASS_ADR_START,pass[couter]);
+	}
+	AT24_write(&rom,PASS_ADR_START+NUM_PASS,0);
+	char CheckPass[NUM_PASS+1];
+	CheckPass[NUM_PASS] = NULL;
+	getPass(&CheckPass[0]);
+	uint8_t isEqual = strcmp(CheckPass,pass);
+	CLCD_Clear();
+	if(isEqual == 0){
+		Print_LCD(0,0,"Save Pass OK");
+		return 1;
+	}
+	Print_LCD(0,0,"Save Pass ERROR");
+	HAL_Delay(1000);
+	return 0;
+}
+uint8_t getCard_RFID(uint8_t InCard[],uint16_t adr)
+{
+	//adr = adr + RFID_ADR_START;
+	InCard[0] = AT24_read(&rom,adr);
+	InCard[1] = AT24_read(&rom,adr+1);
+	InCard[2] = AT24_read(&rom,adr+2);
+	InCard[3] = AT24_read(&rom,adr+3);
+	InCard[4] = AT24_read(&rom,adr+4);
+	// check xem the co hop le khong
+	if(InCard[0] == 255 &&InCard[1] == 255 &&InCard[2] == 255 &&InCard[3] == 255 &&InCard[4] == 255)
+		return 0;	// the khong hop le hoac khong co the
+	return 1;	// the hop le
+}
+uint8_t checkCardRfid(uint8_t InCard[])
+{
+	uint8_t getCard[5];
+	int couter = 0;
+	for(couter = RFID_ADR_START;couter< RFID_ADR_END;couter = couter + RFID_NUM){
+		if(getCard_RFID(getCard,couter) == 1){
+			// the hop le
+			if(compareCard_RFID(getCard,InCard)){
+				// the dung
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+uint16_t findEmtyAdrRfid()
+{
+	int couter = 0;
+	uint8_t Card[5];
+	for(couter = RFID_ADR_START;couter< RFID_ADR_END;couter = couter + RFID_NUM){
+		if(getCard_RFID(Card,couter) == 0){
+			// card loi hoac trong
+			return couter;
+		}
+	}
+	return 0;
+}
+uint16_t checkDoubelCard(uint8_t InCard[])
+{
+	uint8_t getCard[5];
+	int couter = 0;
+	for(couter = RFID_ADR_START;couter< RFID_ADR_END;couter = couter + RFID_NUM){
+		if(getCard_RFID(getCard,couter) == 1){
+			// the hop le
+			if(compareCard_RFID(getCard,InCard)){
+				// gap dung loai the
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+void debugROM()
+{
+	int couter = 0;
+	for(couter = RFID_ADR_START;couter< 50;couter++){
+		arayDebugROM[couter] = AT24_read(&rom,couter);
+	}
+	
 
+}
+uint8_t saveCardRfid(uint8_t InCard[])
+{	// can xu ly them trung lap the
+	if(checkDoubelCard(InCard) == 0){
+		// the da ton tai
+		CLCD_Clear();
+		Print_LCD(0,0,"Save RFID ERROR");
+		Print_LCD(0,1,"Doubel CARD");
+		return 0;
+	}
+	uint16_t adr = findEmtyAdrRfid();
+	AT24_write(&rom,adr,InCard[0]);
+	AT24_write(&rom,adr+1,InCard[1]);
+	AT24_write(&rom,adr+2,InCard[2]);
+	AT24_write(&rom,adr+3,InCard[3]);
+	AT24_write(&rom,adr+4,InCard[4]);
+	uint8_t getCard[5];
+	if(getCard_RFID(getCard,adr)){
+		if(compareCard_RFID(getCard,InCard) == 1){
+			// check ok
+			CLCD_Clear();
+			Print_LCD(0,0,"Save RFID OK");
+			HAL_Delay(1000);
+			return 1;
+		}else{
+			CLCD_Clear();
+			Print_LCD(0,0,"Save RFID ERROR");
+			HAL_Delay(1000);
+			// them vai cai buzz
+			return 0;
+		}
+	}else{
+		CLCD_Clear();
+		Print_LCD(0,0,"Save RFID ERROR");
+		return 0;
+	}
+}
+uint8_t delCardRfid(uint8_t InCard[])
+{
+	uint8_t getCard[5];
+	uint16_t adr = 0;
+	int couter = 0;
+	for(couter = RFID_ADR_START;couter< RFID_ADR_END;couter = couter + RFID_NUM){
+		if(getCard_RFID(getCard,couter) == 1){
+			if(compareCard_RFID(InCard,getCard) == 1){
+				// gap dung the
+				adr = couter;
+				break;
+			}
+		}
+	}
+	if(adr > 0){
+		// gap dung the bat dau xoa
+		AT24_write(&rom,adr,255);
+		AT24_write(&rom,adr+1,255);
+		AT24_write(&rom,adr+2,255);
+		AT24_write(&rom,adr+3,255);
+		AT24_write(&rom,adr+4,255);
+		CLCD_Clear();
+		Print_LCD(0,0,"Xoa Thanh Cong");
+		HAL_Delay(1000);
+		return 1;
+	}else{
+		// co loi
+		CLCD_Clear();
+		Print_LCD(0,0,"Xoa That Bai");
+		HAL_Delay(1000);
+		return 0;
+	}
+
+}
+void delAllRFID()
+{
+	int couter = 0;
+	for(couter = RFID_ADR_START;couter< 200;couter++){
+		AT24_write(&rom,couter,255);
+	}
+}
 //===================================================
+void Test_All_Function()
+{
+// Check LCD and LED LCD
+CLCD_Clear();	
+Print_LCD( 1, 0, "ON:LED LCD");
+LCD_LED_ON;
+HAL_Delay(500);
+Print_LCD( 1, 0, "OFF:LED LCD");
+LCD_LED_OFF;
+HAL_Delay(200);
+CLCD_Clear();
+LCD_LED_ON;
+// Check Buzz And LED
+Print_LCD( 1, 0, "ON BUZZ");
+Print_LCD( 1, 1, "ON RED ON GREEN");
+BUZZ_ON;
+LED_GREEN_ON;
+LED_RED_ON;
+HAL_Delay(1000);
+CLCD_Clear();
+Print_LCD( 1, 0, "OF BUZZ");
+Print_LCD( 1, 1, "OF RED OF GREEN");
+BUZZ_OFF;
+LED_GREEN_OFF;
+LED_RED_OFF;
+//Check RELAY
+HAL_Delay(100);
+CLCD_Clear();
+Print_LCD( 1, 0, "ON RELAY");
+RELAY_ON;
+HAL_Delay(500);
+Print_LCD( 1, 0, "OF RELAY");
+RELAY_OFF;
+//check 
+}
+
 /**
   * @brief  The application entry point.
   * @retval int
   */
 int main(void)
 {
-
   HAL_Init();
   SystemClock_Config();
-  MX_GPIO_Init();
+  //MX_GPIO_Init();
   MX_SPI2_Init();
   MX_I2C1_Init();
 	Config_LCD();
 	Connfig_KEY_Pin();
+	config_GPIO_Other();
 	CLCD_Init(16,2);
 	
 	AT24Cxx_Init(&rom,&hi2c1,0xA0,32);
-	AT24_write(&rom,0,123);
-	HAL_Delay(10);
-	if(AT24_read(&rom,0)!=123)
-	{
-		CLCD_Clear();	
-		Print_LCD( 1, 0, "ERROR EPROM");
-		useBuzz(5);
-	}
-	//Print_LCD(0,0,"Hello");
+	HAL_Delay(100);
+	// Befo go on 
+	//Test_All_Function();
+	//--------
+
+	getPass(&truePass[0]);
+	debugROM();
+	//delAllRFID();
+	//getCard_RFID(CardID,25);
+	//saveCardRfid(true_CardID);
+	
+	//TM_MFRC522_Reset();
+	HAL_Delay(1000);
 	TM_MFRC522_Init();
 	useBuzz(2);
 	CLCD_Clear();	
@@ -532,15 +777,11 @@ int main(void)
 					{
 						Open();
 						couter_pass = 0;
-						CLCD_Clear();
-						Print_LCD( 4, 0, "OPEN DOOR");
 						strcpy(pass,define_pass);
 						completePass = TRUE;
 					}else{
 						Close();
 						couter_pass = 0;
-						CLCD_Clear();
-						Print_LCD( 4, 0, "PASS ERROR");
 						strcpy(pass,define_pass);		// chuyen mang pass ve "******"
 						completePass = TRUE;
 						
@@ -585,18 +826,16 @@ int main(void)
 			HAL_GPIO_WritePin(LCD_PORT,LCD_LED,GPIO_PIN_SET);
 			completePass = TRUE;		// để tắt đèn màn hình
 			CLCD_Clear();
-			Print_LCD( 3, 0, "CO THE RFID");
+			Print_LCD( 1, 0, "Cheacking RFID");
 			char PrintbufferRFID[16];
 			completePass = TRUE;
 			sprintf(&PrintbufferRFID[0],"%x-%x-%x-%x-%x",CardID[0], CardID[1], CardID[2], CardID[3], CardID[4]);			
 			Print_LCD(1,1,&PrintbufferRFID[0]);
 			useBuzz(3);
-			int result = compareCard_RFID(CardID,true_CardID);
+			int result = checkCardRfid(CardID);
+			//int result = compareCard_RFID(CardID,true_CardID);
 			if(result == 1){	// true card
-				CLCD_Clear();
-				sprintf(&PrintbufferRFID[0],"%x-%x-%x-%x-%x",CardID[0], CardID[1], CardID[2], CardID[3], CardID[4]);			
-				Print_LCD(1,0,&PrintbufferRFID[0]);
-				Print_LCD( 0, 1, "TRUE CARD-> OPEN");
+				Open();
 				useBuzz(3);
 			}else{			// fall card
 				CLCD_Clear();

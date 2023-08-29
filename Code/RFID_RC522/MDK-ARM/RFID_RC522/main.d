@@ -1,5 +1,4 @@
 rfid_rc522\main.o: ../Core/Src/main.c
-rfid_rc522\main.o: ../Core/Inc/main.h
 rfid_rc522\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h
 rfid_rc522\main.o: ../Core/Inc/stm32f1xx_hal_conf.h
 rfid_rc522\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h
@@ -27,6 +26,7 @@ rfid_rc522\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h
 rfid_rc522\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h
 rfid_rc522\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h
 rfid_rc522\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_spi.h
+rfid_rc522\main.o: ../Core/Inc/main.h
 rfid_rc522\main.o: ../RC522/LCD_I2C.h
 rfid_rc522\main.o: ../RC522/config_map.h
 rfid_rc522\main.o: ../RC522/AT24Cxx.h

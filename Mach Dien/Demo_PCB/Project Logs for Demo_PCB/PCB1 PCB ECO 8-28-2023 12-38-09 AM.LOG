@@ -1,0 +1,13 @@
+Removed Pin From Net: NetName=NetD1_1 Pin=Q1-2
+Removed Pin From Net: NetName=GND Pin=Q1-3
+Removed Member From Class: ClassName=Power Member=J2
+Change Component Footprint: Designator=Q1 Old Footprint=SOT23_3 New Footprint=QTO-92
+Change Component Comment : Designator=Q1 Old Comment=2SC1815 New Comment=C1815
+Change component parameters: Designator = "Q1" ("Q1"); Footprint = "SOT23_3"; UniqueID = "\JHFBQSAY" ("\JHFBQSAY")
+Change component parameters (AddParameter): Name = "Value"; Value = "C1815"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=NetD1_1 Pin=Q1-1
+Added Pin To Net: NetName=GND Pin=Q1-2
+Added Pin To Net: NetName=NetQ1_3 Pin=Q1-3
+Added Pin To Net: NetName=NetQ1_3 Pin=R7-2
+Added Net: Name=NetQ1_3
+Added Member To Class: ClassName=Power Member=Component J3 KF2

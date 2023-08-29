@@ -1,0 +1,29 @@
+Removed Pin From Net: NetName=GND Pin=Q1-1
+Removed Pin From Net: NetName=NetD1_1 Pin=Q1-3
+Removed Pin From Net: NetName=GND Pin=U3-1
+Removed Pin From Net: NetName=SIGN RELAY Pin=U3-2
+Change Component Footprint: Designator=Q1 Old Footprint=TO92-123 New Footprint=SOT23_3
+Change Component Comment : Designator=Q1 Old Comment=2N222 New Comment=2SC1815
+Change Component Designator: OldDesignator=J2 NewDesignator=J1
+Change Component Designator: OldDesignator=J3 NewDesignator=J2
+Change Component Designator: OldDesignator=J4 NewDesignator=J3
+Change Component Designator: OldDesignator=J5 NewDesignator=J4
+Change component parameters: Designator = "Q1" ("Q1"); Footprint = "TO92-123"; UniqueID = "\FJABBHDN" ("\FJABBHDN")
+Change component parameters (AddParameter): Name = "Category"; Value = ""; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "CompanyID"; Value = ""; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "MFR"; Value = ""; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "MPN"; Value = "2SC1815"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "PinCount"; Value = ""; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "Solder"; Value = "SMT"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "Value"; Value = "2SC1815"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=NetD1_1 Pin=Q1-2
+Added Pin To Net: NetName=GND Pin=Q1-3
+Added Pin To Net: NetName=SIGN RELAY Pin=U3-1
+Added Pin To Net: NetName=GND Pin=U3-2
+Change Net Name : Old Net Name=NetJ3_2 New Net Name=NetJ2_2
+Added Pin To Net: NetName=NetQ1_1 Pin=Q1-1
+Added Pin To Net: NetName=NetQ1_1 Pin=R7-2
+Added Net: Name=NetQ1_1
+Added Room: Name=mAIN 2
+Added Room: Name=Main
+Added Room: Name=Power

@@ -1,0 +1,18 @@
+Removed Pin From Net: NetName=NetD1_1 Pin=Q1-1
+Removed Pin From Net: NetName=GND Pin=Q1-2
+Removed Pin From Net: NetName=SIGN RELAY Pin=U3-1
+Removed Pin From Net: NetName=GND Pin=U3-2
+Removed Member From Class: ClassName=Main Member=Q1
+Change Component Designator: OldDesignator=J1 NewDesignator=J2
+Change Component Designator: OldDesignator=J2 NewDesignator=J3
+Added Component: Designator=Q?(QTO-92)
+Add component (AddParameter): Name = "Value"; Value = "C1815"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=GND Pin=Q?-1
+Added Pin To Net: NetName=NetD1_1 Pin=Q?-2
+Added Pin To Net: NetName=GND Pin=U3-1
+Added Pin To Net: NetName=SIGN RELAY Pin=U3-2
+Change Net Name : Old Net Name=NetJ2_2 New Net Name=NetJ3_2
+Added Pin To Net: NetName=NetQ?_3 Pin=Q?-3
+Added Pin To Net: NetName=NetQ?_3 Pin=R7-2
+Added Net: Name=NetQ?_3
+Added Member To Class: ClassName=Main Member=Component Q? C1815

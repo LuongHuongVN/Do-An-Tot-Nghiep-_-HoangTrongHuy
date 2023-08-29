@@ -7,21 +7,22 @@ Các thiết bị
 Led báo:
     Xanh lá : B11
     Đỏ : B10
-Còi : B1
-Cảm biến HALL : B0
+Còi : B0
+Cảm biến HALL : B1
 Bàn phím : 
-    Hàng 1 A11
-    Hàng 2 A10
-    Hàng 3 A9
-    Hàng 4 A8
-    Cột 1 B5
+    Hàng 1 A8
+    Hàng 2 A9
+    Hàng 3 A10
+    Hàng 4 A11
+    Cột 1 B3
     Cột 2 B4
-    Cột 3 B3
+    Cột 3 B5
 RFID :
+rst:A12
     CE : B12
     SCK : B13
-    MOSI : B15
-    MISO : B14
+    MOSI : B14
+    MISO : B15
 LCD:
     RS : A0
     RW : A1
@@ -35,37 +36,42 @@ RELAY: B8
 */
 // define led
 #define LED_PORT GPIOB
-#define LED_BLUE_PIN GPIO_PIN_11
+#define LED_GREEN_PIN GPIO_PIN_11
 #define LED_RED_PIN GPIO_PIN_10
 
-#define LED_BLUE_ON HAL_GPIO_WritePin(LED_PORT,LED_BLUE_PIN,GPIO_PIN_RESET)
-#define LED_BLUE_OFF HAL_GPIO_WritePin(LED_PORT,LED_BLUE_PIN,GPIO_PIN_RESET)
+#define LED_GREEN_ON HAL_GPIO_WritePin(LED_PORT,LED_GREEN_PIN,GPIO_PIN_SET)
+#define LED_GREEN_OFF HAL_GPIO_WritePin(LED_PORT,LED_GREEN_PIN,GPIO_PIN_RESET)
 
 #define LED_RED_ON HAL_GPIO_WritePin(LED_PORT,LED_RED_PIN,GPIO_PIN_SET)
 #define LED_RED_OFF HAL_GPIO_WritePin(LED_PORT,LED_RED_PIN,GPIO_PIN_RESET)
 
+#define RELAY_PORT GPIOB
+#define RELAY_PIN GPIO_PIN_8
+
+#define RELAY_ON HAL_GPIO_WritePin(RELAY_PORT,RELAY_PIN,GPIO_PIN_SET)
+#define RELAY_OFF HAL_GPIO_WritePin(RELAY_PORT,RELAY_PIN,GPIO_PIN_RESET)
 
 // define buzz
 #define BUZZ_PORT GPIOB
-#define BUZZ_PIN GPIO_PIN_1
+#define BUZZ_PIN GPIO_PIN_0
 #define BUZZ_ON HAL_GPIO_WritePin(BUZZ_PORT,BUZZ_PIN,GPIO_PIN_SET)
 #define BUZZ_OFF HAL_GPIO_WritePin(BUZZ_PORT,BUZZ_PIN,GPIO_PIN_RESET)
 // define key
 #define KEY_ROW_PORT GPIOA
-#define KEY_ROW1_PIN GPIO_PIN_11
-#define KEY_ROW2_PIN GPIO_PIN_10
-#define KEY_ROW3_PIN GPIO_PIN_9
-#define KEY_ROW4_PIN GPIO_PIN_8
+#define KEY_ROW1_PIN GPIO_PIN_8
+#define KEY_ROW2_PIN GPIO_PIN_9
+#define KEY_ROW3_PIN GPIO_PIN_10
+#define KEY_ROW4_PIN GPIO_PIN_11
 #define KEY_COL_PORT GPIOB
-#define KEY_COL1_PIN GPIO_PIN_5
+#define KEY_COL1_PIN GPIO_PIN_3
 #define KEY_COL2_PIN GPIO_PIN_4
-#define KEY_COL3_PIN GPIO_PIN_3
+#define KEY_COL3_PIN GPIO_PIN_5
 // define rfid
 #define RFID_PORT GPIOB
 #define RFID_CE_PIN GPIO_PIN_12
 #define RFID_SCK_PIN GPIO_PIN_13
-#define RFID_MOSI_PIN GPIO_PIN_15
-#define RFID_MISO_PIN GPIO_PIN_14
+#define RFID_MOSI_PIN GPIO_PIN_14
+#define RFID_MISO_PIN GPIO_PIN_15
 
 #define RFID_PORT_RST GPIOA
 #define RFID_RST_PIN GPIO_PIN_12
