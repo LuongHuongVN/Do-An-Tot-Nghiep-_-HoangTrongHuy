@@ -10,6 +10,10 @@
 #define TRUE 1
 #define FALL 0
 #define NUM_PASS 6
+#define PASS_STATE_ADR 7
+#define PASS_ER 1
+#define PASS_OK 255
+#define NUM_ERROR_PASS 3
 #define ADDRESS_PASS_START 10
 #define ADDRESS_PASS_END 10
 
@@ -47,7 +51,11 @@ uint8_t checkCardRfid(uint8_t InCard[]);
 uint16_t findEmtyAdrRfid();
 uint8_t saveCardRfid(uint8_t InCard[]);
 uint8_t delCardRfid(uint8_t InCard[]);
+
 void debugROM();
+struct AT24Cxx rom;
+uint8_t enabel_Pass = 1;
+uint8_t enabel_Menu= 1;
 // Other
 
 void config_GPIO_Other()
@@ -110,7 +118,7 @@ uint8_t ScanKEY() // Qu?t ph?m v? tra ve mang MAP
 					useBuzz(3);
 			
 			}
-			if(couter == 3 && click_COL == 0 && coutTime > 30)
+			if(couter == 3 && click_COL == 0 && coutTime > 30 && enabel_Menu == 1)
 			{
 				begin_gotoMenu();
 			}
@@ -309,10 +317,13 @@ uint8_t compareCard_RFID(uint8_t* TagType1,uint8_t* TagType2)
 // Password Function and variabel
 char couter_pass = 0;
 char enRFID = 0;
+char passMaster[NUM_PASS+1] = "123456\0";
 char pass[NUM_PASS+1] = "******\0";
 char define_pass[NUM_PASS+1] = "******\0";
 char truePass[NUM_PASS+1] = "      \0";
 char completePass = FALL;
+uint8_t cout_err_Pass = 0;
+
 uint8_t arayDebugROM[50];
 uint8_t checkPass(uint8_t *s1, uint8_t *s2, uint8_t num)
 {
@@ -422,9 +433,15 @@ void begin_gotoMenu()
 			break;
 		key = ScanKEY();		// quet ma tran phim
 		if(key != NULL){
-			if(couter_ < NUM_PASS && key != '#' && key != '*'){
-				passChange[couter_] = key;	// gan ky tu vao mang
-				couter_++;
+			if(couter_ < NUM_PASS  && key != '*'){
+				if(key == '#'){
+					couter_--;
+					passChange[couter_] = '*';	// gan ky tu vao mang
+				}else{
+					passChange[couter_] = key;	// gan ky tu vao mang
+					couter_++;
+				}
+				
 				CLCD_Clear();
 				Print_LCD( 3, 0, "Go To Menu");
 				Print_LCD( 0, 1, "KEY:");
@@ -433,14 +450,26 @@ void begin_gotoMenu()
 			if(couter_ == NUM_PASS){	// nhap du 6 ky tu
 				if(checkPass((uint8_t *)&passChange[0], (uint8_t *)&truePass[0], NUM_PASS)){
 					changeStatus = 1;
+					cout_err_Pass = 0;
 					break;
 				}else{
 					// pas sai
+					cout_err_Pass ++;
+					if(cout_err_Pass >= NUM_ERROR_PASS){
+						CLCD_Clear();
+						Print_LCD( 0, 0, "Sai Qua 3 Lan");
+						Print_LCD( 0, 1, "Nhap KeyMaster");
+						useBuzz(5);
+						AT24_write(&rom,PASS_STATE_ADR,PASS_ER);
+						break;
+					}
 					CLCD_Clear();
 					Print_LCD( 0, 0, "Sai pass");
 					changeStatus = 0;
 					//int j = 0;
-					HAL_Delay(1000);
+					BUZZ_ON;
+					HAL_Delay(800);
+					BUZZ_OFF;
 					Print_LCD( 1, 0, "MOI NHAP KEY");
 					// sai pass ve menu chinh
 					return;
@@ -475,9 +504,16 @@ void changeKeyPass()
 			break;
 		key = ScanKEY();		// quet ma tran phim
 		if(key != NULL){
-			if(couter_ < NUM_PASS && key != '#' && key != '*'){
-				passChange[couter_] = key;	// gan ky tu vao mang
-				couter_++;
+			if(couter_ < NUM_PASS && key != '*'){
+				if(key == '#'){
+					couter_--;
+					passChange[couter_] = '*';	// gan ky tu vao mang
+						
+				}else{
+					passChange[couter_] = key;	// gan ky tu vao mang
+					couter_++;
+				}
+				
 				CLCD_Clear();
 				Print_LCD( 3, 0, "NEW PASS");
 				Print_LCD( 0, 1, "KEY:");
@@ -515,7 +551,7 @@ void changeKeyPass()
 }
 //==============================
 // ROM Function and variabel
-struct AT24Cxx rom;
+
 // getPass
 void getPass(char pass[])
 {
@@ -616,7 +652,14 @@ uint8_t saveCardRfid(uint8_t InCard[])
 		Print_LCD(0,1,"Doubel CARD");
 		return 0;
 	}
-	uint16_t adr = findEmtyAdrRfid();
+	uint16_t adr = findEmtyAdrRfid();		// tìm vị trí trống để lưu
+	if(adr < RFID_ADR_START){		// không tìm được vị trí nào
+		//=> đầy bộ nhớ 
+		CLCD_Clear();
+		Print_LCD(0,0,"ERROR");
+		Print_LCD(0,1,"FULL CARD");
+		return 0;
+	}
 	AT24_write(&rom,adr,InCard[0]);
 	AT24_write(&rom,adr+1,InCard[1]);
 	AT24_write(&rom,adr+2,InCard[2]);
@@ -664,14 +707,21 @@ uint8_t delCardRfid(uint8_t InCard[])
 		AT24_write(&rom,adr+2,255);
 		AT24_write(&rom,adr+3,255);
 		AT24_write(&rom,adr+4,255);
+		HAL_Delay(50);
+		uint8_t IdCard[5];
+		if(getCard_RFID(IdCard,adr) == 0){	// Thẻ không tồn tại sau khi bị xóa
 		CLCD_Clear();
 		Print_LCD(0,0,"Xoa Thanh Cong");
 		HAL_Delay(1000);
 		return 1;
+		}else{
+		CLCD_Clear();
+		Print_LCD(0,0,"Loi Khi Xoa");	
+		}
 	}else{
 		// co loi
 		CLCD_Clear();
-		Print_LCD(0,0,"Xoa That Bai");
+		Print_LCD(0,0,"The Khong Ton Tai");
 		HAL_Delay(1000);
 		return 0;
 	}
@@ -685,6 +735,82 @@ void delAllRFID()
 	}
 }
 //===================================================
+void checkERRORpass()
+{
+	if(AT24_read (&rom,PASS_STATE_ADR)==PASS_ER){
+		enabel_Menu = 0;
+		enabel_Pass = 0;
+		CLCD_Clear();
+		LCD_LED_ON;
+		// Print_LCD(0,0,"Sai Pass 3 Lan\0");
+		// Print_LCD(0,1,"Nhap Key Master\0");
+		// useBuzz(3);
+		// HAL_Delay(2000);
+		useBuzz(1);
+		uint8_t key;
+		//uint32_t startTime = HAL_GetTick();
+		uint8_t couter_pass = 0;
+		char masterPass[7] = "******\0";
+		Print_LCD( 1, 0, "__Warning__");
+		Print_LCD( 0, 1, "KEY:");
+		Print_LCD( 4, 1, (char *)&masterPass[0]);
+		while(1)
+		{
+			// uint32_t currentTime = HAL_GetTick();
+			// if (currentTime - startTime >= 60000)
+			// 	break;
+			key = ScanKEY();
+		//isOnLedLCD = isClick;
+			if(key != NULL)
+			{
+				if(couter_pass < NUM_PASS && key != '*'){
+					if(key == '#'){
+						couter_pass--;
+						masterPass[couter_pass] = '*';	// gan ky tu vao mang
+					
+					}else{
+						masterPass[couter_pass] = key;	// gan ky tu vao mang
+						couter_pass++;
+					}
+					CLCD_Clear();
+					Print_LCD( 1, 0, "__Warning__");
+					Print_LCD( 0, 1, "KEY:");
+					Print_LCD( 4, 1, (char *)&masterPass[0]);
+				}
+				if(couter_pass == NUM_PASS){
+					
+					if(checkPass((uint8_t *)&masterPass[0], (uint8_t *)&passMaster[0], NUM_PASS))
+					{ 	
+						couter_pass = 0;
+						AT24_write(&rom,PASS_STATE_ADR,PASS_OK);
+						enabel_Menu = 1;
+						enabel_Pass = 1;
+						break;
+					}else{
+						
+						couter_pass = 0;
+						strcpy(masterPass,define_pass);		// chuyen mang pass ve "******"
+						Print_LCD(0,0,"Sai Pass Master\0");
+						Print_LCD(0,1,"Nhap Lai\0");
+						BUZZ_ON;
+						HAL_Delay(500);
+						BUZZ_OFF;
+						Print_LCD( 1, 0, "__Warning__");
+						Print_LCD( 0, 1, "KEY:");
+						Print_LCD( 4, 1, (char *)&masterPass[0]);
+
+						
+					}
+				}
+				
+			}
+		}
+	}else{
+		enabel_Menu = 1;
+		enabel_Pass = 1;
+	}
+	
+}
 void Test_All_Function()
 {
 // Check LCD and LED LCD
@@ -757,15 +883,22 @@ int main(void)
 	Print_LCD( 1, 0, "MOI NHAP KEY");
   while (1)
   {
+		checkERRORpass();
 		keyChar = ScanKEY();
 		//isOnLedLCD = isClick;
 		if(keyChar != NULL)
 		{
 			isOnLedLCD = TRUE;
 			if(isClick ==  TRUE){
-				if(couter_pass < NUM_PASS && keyChar != '#' && keyChar != '*'){
-					pass[couter_pass] = keyChar;
-					couter_pass++;
+				if(couter_pass < NUM_PASS && keyChar != '*'){
+					if(keyChar == '#'){
+						couter_pass--;
+						pass[couter_pass] = '*';
+						
+					}else{
+						pass[couter_pass] = keyChar;
+						couter_pass++;
+					}					
 					CLCD_Clear();
 					Print_LCD( 1, 0, "INPUT KEY CODE");
 					Print_LCD( 0, 1, "KEY:");
@@ -773,18 +906,28 @@ int main(void)
 				}
 				if(couter_pass == NUM_PASS){
 					
-					if(checkPass((uint8_t *)&pass[0], (uint8_t *)&truePass[0], NUM_PASS))
+					if(checkPass((uint8_t *)&pass[0], (uint8_t *)&truePass[0], NUM_PASS) && enabel_Pass == 1)
 					{
 						Open();
 						couter_pass = 0;
 						strcpy(pass,define_pass);
 						completePass = TRUE;
+						cout_err_Pass = 0;
+						Print_LCD( 1, 0, "MOI NHAP KEY");
 					}else{
+						cout_err_Pass ++;
+						if(cout_err_Pass >= NUM_ERROR_PASS){
+							CLCD_Clear();
+							Print_LCD( 0, 0, "Sai Qua 3 Lan");
+							Print_LCD( 0, 1, "Nhap KeyMaster");
+							useBuzz(5);
+							AT24_write(&rom,PASS_STATE_ADR,PASS_ER);
+						}
 						Close();
 						couter_pass = 0;
 						strcpy(pass,define_pass);		// chuyen mang pass ve "******"
 						completePass = TRUE;
-						
+						Print_LCD( 1, 0, "MOI NHAP KEY");
 					}
 				}
 			}
