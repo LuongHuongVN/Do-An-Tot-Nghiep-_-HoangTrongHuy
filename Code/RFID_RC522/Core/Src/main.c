@@ -52,13 +52,16 @@ uint16_t findEmtyAdrRfid();
 uint8_t saveCardRfid(uint8_t InCard[]);
 uint8_t delCardRfid(uint8_t InCard[]);
 
-void debugROM();
+
 struct AT24Cxx rom;
 uint8_t enabel_Pass = 1;
 uint8_t enabel_Menu= 1;
 // Other
-
+/*
 void config_GPIO_Other()
+Thiết lập chức năng chân GPIO của các ngoại vi như đèn led , còi , ..
+*/
+void config_GPIO_Other()	
 {
 	// relay
 	GPIO_InitTypeDef GPIO_Key = {0};
@@ -71,17 +74,19 @@ void config_GPIO_Other()
 	// buzz
 }
 // KEY Function and variabel
-uint8_t isClick = FALL;
-uint8_t keyChar = NULL;
-uint64_t lastButtonPressTime = 0;
-const uint16_t PIN_OUT_SCAN[3] = {KEY_COL1_PIN,KEY_COL2_PIN,KEY_COL3_PIN};
- uint16_t PIN_COL_SCAN[3] = {KEY_COL1_PIN,KEY_COL2_PIN,KEY_COL3_PIN};
- uint16_t PIN_ROW_SCAN[4] = {KEY_ROW1_PIN,KEY_ROW2_PIN,KEY_ROW3_PIN,KEY_ROW4_PIN};
-const uint8_t KEY_MAP[4][3] = {
+uint8_t isClick = FALL;	// báo có sự kiện nhấn phím
+uint8_t keyChar = NULL;	// lưu giá trị nhấn phím
+uint16_t PIN_COL_SCAN[3] = {KEY_COL1_PIN,KEY_COL2_PIN,KEY_COL3_PIN};	// mảng các chân IO của cột bàn phoím
+uint16_t PIN_ROW_SCAN[4] = {KEY_ROW1_PIN,KEY_ROW2_PIN,KEY_ROW3_PIN,KEY_ROW4_PIN};	// mảng các chân IO của hàng 
+const uint8_t KEY_MAP[4][3] = {	// Các ký tự của bàn phím
 	{'1', '2', '3'},
 	{'4', '5', '6'},
 	{'7', '8', '9'},
 	{'*', '0', '#'}};
+/*
+void Connfig_KEY_Pin()
+Thiết lập các chân IO của bàn phím
+*/
 void Connfig_KEY_Pin()
 {
 	__HAL_RCC_GPIOB_CLK_ENABLE();
@@ -99,109 +104,44 @@ void Connfig_KEY_Pin()
 	GPIO_Key.Pull = GPIO_PULLUP;
 	HAL_GPIO_Init(KEY_ROW_PORT, &GPIO_Key);
 }
+/*
+uint8_t ScanKEY()
+ Quét các phím bấm .
+ Có phím được nhấn trả về dạng uint8_t của dữ liệu mảng key map
+ không có phím => trả về NULL(0)
+*/
 uint8_t ScanKEY()
 {
 	uint8_t colum = 0;//3 output
 	uint8_t row = 0;//4 input
 	uint8_t value = 0;
 	for(colum = 0;colum<3;colum++){
-		//HAL_Delay(3);
 		HAL_GPIO_WritePin(KEY_COL_PORT,PIN_COL_SCAN[colum],GPIO_PIN_RESET);
 		for(row = 0;row<4;row++){
-			//HAL_Delay(5);
 			if(HAL_GPIO_ReadPin(KEY_ROW_PORT,PIN_ROW_SCAN[row])==0){
-				//HAL_Delay(1);
-				//if(HAL_GPIO_ReadPin(KEY_ROW_PORT,PIN_ROW_SCAN[row])==0){	// kiem tra lai nut nhan
-					BUZZ_ON;
-					HAL_Delay(50);
-					BUZZ_OFF; 
-					isClick = TRUE;
-					while(HAL_GPIO_ReadPin(KEY_ROW_PORT,PIN_ROW_SCAN[row])==0);
-					value = KEY_MAP[row][colum];
-					HAL_GPIO_WritePin(KEY_COL_PORT,KEY_COL1_PIN|KEY_COL2_PIN|KEY_COL3_PIN,GPIO_PIN_SET);
-					return value;
-				//}
+				BUZZ_ON;
+				HAL_Delay(50);
+				BUZZ_OFF; 
+				isClick = TRUE;
+				while(HAL_GPIO_ReadPin(KEY_ROW_PORT,PIN_ROW_SCAN[row])==0);
+				value = KEY_MAP[row][colum];
+				HAL_GPIO_WritePin(KEY_COL_PORT,KEY_COL1_PIN|KEY_COL2_PIN|KEY_COL3_PIN,GPIO_PIN_SET);
+				return value;
 			}
 		}
 		isClick = FALL;
 		HAL_GPIO_WritePin(KEY_COL_PORT,PIN_COL_SCAN[colum],GPIO_PIN_SET);
-		//HAL_Delay(5);
 	}
 	return 0;
 
 }
-// uint8_t ScanKEY() // Qu?t ph?m v? tra ve mang MAP
-// {
-// 	uint8_t couter = 0;
-// 	uint8_t click_COL =0;
-// 	for (couter = 0; couter < 4; couter++)
-// 	{
-// //		uint16_t portA = GPIOA->ODR;
-// //		portA = portA | 0x0400;
-// //		GPIOA->ODR = portA;
-// 		HAL_GPIO_WritePin(KEY_ROW_PORT, PIN_OUT_SCAN[couter], GPIO_PIN_RESET);
-// 		if (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL1_PIN)==0)
-// 		{
-// 			click_COL = 0;
-// 			BUZZ_ON;
-// 			HAL_Delay(30);
-// 			isClick = TRUE;
-			
-// 			BUZZ_OFF;
-// 			if(couter == 3){
-// 				int coutTime = 0;
-// 				while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL1_PIN)==0){
-// 					coutTime++;
-// 					HAL_Delay(30);
-// 					if(coutTime>30)
-// 						useBuzz(3);
-				
-// 				}
-// 				if(click_COL == 0 && coutTime > 30 && enabel_Menu == 1)
-// 				{
-// 					begin_gotoMenu();
-// 					return NULL;
-// 				}
-// 			}else{while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL1_PIN)==0);}
-// 			return KEY_MAP[couter][click_COL];
-// 		}
-// 		else if (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL2_PIN)==0)
-// 		{
-// 			click_COL = 1;
-// 			BUZZ_ON;
-// 			HAL_Delay(30);
-// 			isClick = TRUE;
-			
-// 			BUZZ_OFF;
-// 			while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL2_PIN)==0){}
-
-// 			return KEY_MAP[couter][click_COL];
-				
-// 			//break;
-// 		}
-// 		else if (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL3_PIN)==0)
-// 		{
-// 			click_COL = 2;
-// 			BUZZ_ON;
-// 			HAL_Delay(30);
-// 			isClick = TRUE;
-			
-// 			BUZZ_OFF;
-// 			while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL3_PIN)==0){}
-			
-// 			return KEY_MAP[couter][click_COL];
-// 			//break;
-// 		}
-// 		HAL_GPIO_WritePin(KEY_ROW_PORT, PIN_OUT_SCAN[couter], GPIO_PIN_SET);
-// 		HAL_Delay(10);
-// 	}
-	
-// 	return NULL;
-// }
 //=====================================================
 // LCD Function and variabel
 extern CLCD_Name LCD;
-uint8_t isOnLedLCD = FALL;
+uint8_t isOnLedLCD = FALL;		// lưu trạng thái bật đèn màn hình
+/*
+Thiết lập các chân điều khiển màn hình LCD
+*/
 void Config_LCD()
 {
 	__HAL_RCC_GPIOA_CLK_ENABLE();
@@ -212,6 +152,7 @@ void Config_LCD()
 	GPIO_Key.Speed = GPIO_SPEED_FREQ_HIGH;
 	HAL_GPIO_Init(LCD_PORT, &GPIO_Key);
 }
+// Hiển thị lên LCD tọa độ x,y chuỗi string
 void Print_LCD( uint8_t x, uint8_t y, char *string)
 {
 	CLCD_SetCursor(x, y);
@@ -219,15 +160,19 @@ void Print_LCD( uint8_t x, uint8_t y, char *string)
 }
 //==================
 // RFID Function and variabel
-uint8_t CardID[5];
-uint8_t buffer_CardID[5];
-uint8_t true_CardID[5];
+uint8_t CardID[5];		// lưu card đọc được
+uint8_t buffer_CardID[5];	// quét các card 
+/*
+Thêm card RFID vào bộ nhớ:
+Tự động thoát vòng lặp sau 60 giây.
+Quét card được nhập và hiển thị id . 
+*/
 void addCard_RFID()
 {
 	CLCD_Clear();
 	Print_LCD(0,0,"Nhap The Moi\0");
 	Print_LCD(0,1,"WAINT\0");
-	int graDot = 0;		// hiển thị dấu chấm
+	//int graDot = 0;		// hiển thị dấu chấm
 	uint32_t startTime = HAL_GetTick();
 	uint8_t _CardID[5];
 	HAL_GPIO_WritePin(LCD_PORT,LCD_LED,GPIO_PIN_SET);
@@ -241,11 +186,11 @@ void addCard_RFID()
 			CLCD_Clear();
 			break;
 		}
-		if((currentTime - startTime)/1000 == graDot)	// cai nay de chay hieu ung
-		{
-			Print_LCD(5+graDot,1,"-");
-			graDot = ((currentTime - startTime)/1000)+1;
-		}
+		// if((currentTime - startTime)/1000 == graDot)	// cai nay de chay hieu ung
+		// {
+		// 	Print_LCD(5+graDot,1,"-");
+		// 	graDot = ((currentTime - startTime)/1000)+1;
+		// }
 		uint8_t status;
 		status = TM_MFRC522_Request(PICC_REQALL, _CardID);
         if (status != MI_OK)
@@ -266,23 +211,7 @@ void addCard_RFID()
 			while(1){
 				char key = ScanKEY();
 				if(key == '*'){
-					//strcpy(truePass,passChange);	// save pass
-					// truoc khi them the can kiem tra lai xem the nay da ton tai hay chua
-					
-					// int cout;
-					// for(cout=0;cout<5;cout++){
-					// 	true_CardID[cout] = _CardID[cout];
-					// }
-					debugROM();
 					saveCardRfid(_CardID);
-					//debugROM();
-					// if(saveCardRfid(_CardID)==1){
-					// 	CLCD_Clear();
-					// 	Print_LCD(0,0," Thanh Cong\0");
-					// }else{
-					// 	CLCD_Clear();
-					// 	Print_LCD(0,0,"Luu The FALL\0");
-					// }
 					HAL_Delay(1000);
 					CLCD_Clear();	
 					Print_LCD( 1, 0, "MOI NHAP KEY");
@@ -297,6 +226,11 @@ void addCard_RFID()
 		}
 	}
 }
+/*
+Xóa card RFID khỏi bộ nhớ:
+Tự động thoát vòng lặp sau 60 giây.
+Quét card được nhập và hiển thị id . 
+*/
 void delCard_RFID()
 {
 	CLCD_Clear();
@@ -349,6 +283,11 @@ void delCard_RFID()
 		}
 	}
 }
+/*
+So sánh 2 card ID ( so sánh 5 mã id)
+Trùng nhau trả về 1 
+Khác nhau trả về 0
+*/
 uint8_t compareCard_RFID(uint8_t* TagType1,uint8_t* TagType2)
 {
 	int state = 1;
@@ -361,16 +300,17 @@ uint8_t compareCard_RFID(uint8_t* TagType1,uint8_t* TagType2)
 }
 //=====================================================
 // Password Function and variabel
-char couter_pass = 0;
-char enRFID = 0;
-char passMaster[NUM_PASS+1] = "123456\0";
-char pass[NUM_PASS+1] = "******\0";
-char define_pass[NUM_PASS+1] = "******\0";
-char truePass[NUM_PASS+1] = "      \0";
-char completePass = FALL;
-uint8_t cout_err_Pass = 0;
-
-uint8_t arayDebugROM[50];
+char couter_pass = 0;		// Số ký tự của mật khẩu đang nhập
+char passMaster[NUM_PASS+1] = "123456\0";	// khóa master để mở thiết bị
+char pass[NUM_PASS+1] = "******\0";	// chứa pass đang nhập 
+char define_pass[NUM_PASS+1] = "******\0";	// chứa chuỗi * để reset lại pass
+char truePass[NUM_PASS+1] = "      \0";	// lưu mật khẩu chính xác ( được đọc từ bộ nhớ ROM)	
+uint8_t cout_err_Pass = 0;		// đếm số lần nhập sai mật khẩu
+/*
+Kiểm tra xem 2 pass có giống nhau không.
+Trả về 1 nếu giống 
+trả về 0 nếu sai
+*/
 uint8_t checkPass(uint8_t *s1, uint8_t *s2, uint8_t num)
 {
 	int state = 1;
@@ -384,9 +324,9 @@ uint8_t checkPass(uint8_t *s1, uint8_t *s2, uint8_t num)
 }
 //======================
 // Function 
-uint32_t lastTimeTruePass = 0;
-
-uint8_t modeSystem = 0;
+/*
+Xử lý việc mở cửa
+*/
 void Open()
 {
 //	LED_BLUE_ON;
@@ -395,14 +335,21 @@ void Open()
 	RELAY_ON;
 	HAL_Delay(2000);
 	RELAY_OFF;
-	CLCD_Clear();
+	//CLCD_Clear();
 }
+/*
+Xử lý việc đóng cửa ( khi nhập sai pass mở cửa)
+*/
 void Close()
 {
 	//CLCD_Clear();
 	//Print_LCD( 4, 0, "PASS ERROR");
 	RELAY_OFF;
 }
+/*
+Bật còi Buzz n lần
+Kêu 200ms tắt trong 100ms
+*/
 void useBuzz(int n)
 {
 	int i;
@@ -414,6 +361,11 @@ void useBuzz(int n)
 		HAL_Delay(100);
 	}
 }
+/*
+Xử lý việc hiển thị và chọn chức năng menu
+Dẫn tới các hàm con của chức năng trong menu
+Tự thoát hàm sau 60s
+*/
 void gotoMenu()
 {
 	HAL_GPIO_WritePin(LCD_PORT,LCD_LED,GPIO_PIN_SET);
@@ -445,14 +397,10 @@ void gotoMenu()
 		}
 		if(key != NULL && state == 1){
 			if(key == '1'){
-				// CLCD_Clear();
-				// Print_LCD( 0, 0, "---ADD CARD RFID");
 				addCard_RFID();
 				break;
 				// add card
 			}else if(key == '2'){
-				// CLCD_Clear();
-				// Print_LCD( 0, 0, "---DEL CARD RFID");
 				delCard_RFID();
 				break;
 				// del card
@@ -461,6 +409,12 @@ void gotoMenu()
 		key = NULL;		
 	}
 }
+/*
+Xử lý việc di chuyển tới menu. Yêu cầu nhập mật khẩu để vào trong menu
+Dẫn tới các hàm gotoMenu() nếu nhập đúng
+Sai 3 lần khóa thiết bị
+Tự thoát hàm sau 60s
+*/
 void begin_gotoMenu()
 {
 	CLCD_Clear();
@@ -531,10 +485,14 @@ void begin_gotoMenu()
 		// Pass Sai
 	}
 }
+/*
+Xử lý việc nhập mật khẩu mới ( quét phím và hiển thị lên LCD)
+Dẫn tới chương trình lưu mật khẩu sau khi xác nhận (*)
+Tự thoát hàm sau 60s
+*/
 void changeKeyPass()
 {
 	CLCD_Clear();
-	//Print_LCD( 0, 0, "Nhap Mat Ma Moi");
 	uint8_t key = NULL;
 	char passChange[NUM_PASS+1] = "******\0";
 	//uint8_t changeStatus = 0;
@@ -601,14 +559,20 @@ void changeKeyPass()
 }
 //==============================
 // ROM Function and variabel
-
-// getPass
+// Lấy mật khẩu từ vị trí được quy ước trong bộ nhớ ROM
 void getPass(char pass[])
 {
 	uint16_t couter;
 	for(couter = 0;couter < 0 + NUM_PASS ;couter++)
 		pass[couter] = AT24_read(&rom,couter + PASS_ADR_START);
 }
+/*
+Lưu mật khẩu vào bộ nhớ .
+Lưu vào vị trí được quy ước
+Sau khi lưu thì đọc lại mật khẩu từ trong bộ nhớ ROM để kiểm tra
+Nếu 2 mật khẩu giống nhau =>> lưu thành công return 1
+Ngược lại return 0
+*/
 uint8_t savePass(char pass[])
 {
 	uint16_t couter;
@@ -622,13 +586,16 @@ uint8_t savePass(char pass[])
 	uint8_t isEqual = strcmp(CheckPass,pass);
 	CLCD_Clear();
 	if(isEqual == 0){
-		//Print_LCD(0,0,"Save Pass OK");
 		return 1;
 	}
-	//Print_LCD(0,0,"Save Pass ERROR");
 	HAL_Delay(1000);
 	return 0;
 }
+/*
+Đọc mã thẻ RFID tại vị trí ô nhớ adr
+Nếu thẻ có dạng FF FF FF FF FF thì báo thẻ lỗi hoặc không có thẻ => return 0
+Nếu thẻ đọc được không có vấn đề thì return 1
+*/
 uint8_t getCard_RFID(uint8_t InCard[],uint16_t adr)
 {
 	//adr = adr + RFID_ADR_START;
@@ -642,6 +609,11 @@ uint8_t getCard_RFID(uint8_t InCard[],uint16_t adr)
 		return 0;	// the khong hop le hoac khong co the
 	return 1;	// the hop le
 }
+/*
+Kiểm tra xem thẻ InCard có trong bộ nhớ không 
+bằng cách quét các địa chỉ với hàm getCard_RFID
+Có thì trả về 1 
+*/
 uint8_t checkCardRfid(uint8_t InCard[])
 {
 	uint8_t getCard[5];
@@ -657,6 +629,12 @@ uint8_t checkCardRfid(uint8_t InCard[])
 	}
 	return 0;
 }
+/*
+Tìm vị trí còn trống trong bộ nhớ
+Kiểm tra xem có 5 vị trí liên tiếp có giá trị ff ( thẻ lỗi )
+Sử dụng getCard_RFID để tìm vị trí bị lỗi
+trả về vị trí ô nhớ đầu tiên của khối còn trống
+*/
 uint16_t findEmtyAdrRfid()
 {
 	int couter = 0;
@@ -669,6 +647,12 @@ uint16_t findEmtyAdrRfid()
 	}
 	return 0;
 }
+/**
+ * @brief Kiểm tra xem có trùng thẻ trong quá trình lưu không 
+ * 
+ * @param InCard 
+ * @return uint16_t 
+ */
 uint16_t checkDoubelCard(uint8_t InCard[])
 {
 	uint8_t getCard[5];
@@ -684,15 +668,13 @@ uint16_t checkDoubelCard(uint8_t InCard[])
 	}
 	return 1;
 }
-void debugROM()
-{
-	int couter = 0;
-	for(couter = RFID_ADR_START;couter< 50;couter++){
-		arayDebugROM[couter] = AT24_read(&rom,couter);
-	}
-	
-
-}
+/**
+ * @brief Lưu thẻ InCard vào vị trí. Đầu tiên kiểm tra thẻ xem có trùng lặp không 
+ * Sau đó tìm vị trí còn trống trong bộ nhớ rồi lưu lại. Có kiểm tra lại
+ * 
+ * @param InCard 
+ * @return uint8_t 
+ */
 uint8_t saveCardRfid(uint8_t InCard[])
 {	// can xu ly them trung lap the
 	if(checkDoubelCard(InCard) == 0){
@@ -736,6 +718,12 @@ uint8_t saveCardRfid(uint8_t InCard[])
 		return 0;
 	}
 }
+/**
+ * @brief Xóa thẻ InCard bằng cách tìm vị trí thẻ và set các giá trị lên 0xFF. Có kiểm tra lại
+ * 
+ * @param InCard 
+ * @return uint8_t 
+ */
 uint8_t delCardRfid(uint8_t InCard[])
 {
 	uint8_t getCard[5];
@@ -777,6 +765,10 @@ uint8_t delCardRfid(uint8_t InCard[])
 	}
 
 }
+/**
+ * @brief Xóa toàn bộ thẻ ( không sử dụng )
+ * 
+ */
 void delAllRFID()
 {
 	int couter = 0;
@@ -785,17 +777,16 @@ void delAllRFID()
 	}
 }
 //===================================================
+/**
+ * @brief Kiểm tra trong bộ nhớ xem hệ thống có bị khóa không. Nếu có thì khóa và yêu cầu nhập Master Key
+ * 
+ */
 void checkERRORpass()
 {
 	if(AT24_read (&rom,PASS_STATE_ADR)==PASS_ER){
 		enabel_Menu = 0;
 		enabel_Pass = 0;
 		CLCD_Clear();
-		//LCD_LED_ON;
-		// Print_LCD(0,0,"Sai Pass 3 Lan\0");
-		// Print_LCD(0,1,"Nhap Key Master\0");
-		// useBuzz(3);
-		// HAL_Delay(2000);
 		useBuzz(1);
 		uint8_t key;
 		//uint32_t startTime = HAL_GetTick();
@@ -806,12 +797,7 @@ void checkERRORpass()
 		Print_LCD( 4, 1, (char *)&masterPass[0]);
 		while(1)
 		{
-			// uint32_t currentTime = HAL_GetTick();
-			// if (currentTime - startTime >= 60000)
-			// 	break;
 			key = ScanKEY();
-			
-		//isOnLedLCD = isClick;
 			if(key != NULL)
 			{
 				LCD_LED_ON;
@@ -866,41 +852,10 @@ void checkERRORpass()
 	}
 	
 }
-void Test_All_Function()
-{
-// Check LCD and LED LCD
-CLCD_Clear();	
-Print_LCD( 1, 0, "ON:LED LCD");
-LCD_LED_ON;
-HAL_Delay(500);
-Print_LCD( 1, 0, "OFF:LED LCD");
-LCD_LED_OFF;
-HAL_Delay(200);
-CLCD_Clear();
-LCD_LED_ON;
-// Check Buzz And LED
-Print_LCD( 1, 0, "ON BUZZ");
-Print_LCD( 1, 1, "ON RED ON GREEN");
-BUZZ_ON;
-LED_GREEN_ON;
-LED_RED_ON;
-HAL_Delay(1000);
-CLCD_Clear();
-Print_LCD( 1, 0, "OF BUZZ");
-Print_LCD( 1, 1, "OF RED OF GREEN");
-BUZZ_OFF;
-LED_GREEN_OFF;
-LED_RED_OFF;
-//Check RELAY
-HAL_Delay(100);
-CLCD_Clear();
-Print_LCD( 1, 0, "ON RELAY");
-RELAY_ON;
-HAL_Delay(500);
-Print_LCD( 1, 0, "OF RELAY");
-RELAY_OFF;
-//check 
-}
+/**
+ * @brief Xử lý việc nhập sai mật khẩu
+ * 
+ */
 void actionFallPass()
 {
 	LCD_LED_ON;
@@ -937,29 +892,18 @@ int main(void)
 	Connfig_KEY_Pin();
 	config_GPIO_Other();
 	CLCD_Init(16,2);
-	
 	AT24Cxx_Init(&rom,&hi2c1,0xA0,32);
 	HAL_Delay(100);
-	// Befo go on 
-	//Test_All_Function();
-	//--------
-
 	getPass(&truePass[0]);
-	debugROM();
-	//delAllRFID();
-	//getCard_RFID(CardID,25);
-	//saveCardRfid(true_CardID);
-	
-	//TM_MFRC522_Reset();
 	TM_MFRC522_Init();
 	useBuzz(2);
 	CLCD_Clear();	
 	Print_LCD( 1, 0, "MOI NHAP KEY");
+	uint64_t lastButtonPressTime = 0;
   while (1)
   {
 		checkERRORpass();
 		keyChar = ScanKEY();
-		//isOnLedLCD = isClick;
 		if(keyChar != NULL)
 		{
 			isOnLedLCD = TRUE;
@@ -990,7 +934,7 @@ int main(void)
 						Open();
 						couter_pass = 0;
 						strcpy(pass,define_pass);
-						completePass = TRUE;
+						
 						cout_err_Pass = 0;
 						Print_LCD( 1, 0, "MOI NHAP KEY");
 					}else{
@@ -1006,7 +950,7 @@ int main(void)
 						Close();
 						couter_pass = 0;
 						strcpy(pass,define_pass);		// chuyen mang pass ve "******"
-						completePass = TRUE;
+						
 						
 					}
 				}
@@ -1020,12 +964,10 @@ int main(void)
 		}else if(HAL_GetTick() - lastButtonPressTime >= 5000)
 		{
 			HAL_GPIO_WritePin(LCD_PORT,LCD_LED,GPIO_PIN_RESET);
-			if(completePass == TRUE){
-				CLCD_Clear();
-				Print_LCD( 1, 0, "MOI NHAP KEY");
-				completePass = FALL;
-			}
-			isOnLedLCD = FALL;
+			CLCD_Clear();
+			Print_LCD( 1, 0, "MOI NHAP KEY");
+			couter_pass = 0;
+			strcpy(pass,define_pass);		// chuyen mang pass ve "******"
 		}  
 		// code rfid
         Status = TM_MFRC522_Request(PICC_REQALL, buffer_CardID);
@@ -1046,17 +988,15 @@ int main(void)
 			CardID[3] = buffer_CardID[3];
 			CardID[4] = buffer_CardID[4];
 
-			HAL_GPIO_WritePin(LCD_PORT,LCD_LED,GPIO_PIN_SET);
-			completePass = TRUE;		// để tắt đèn màn hình
+			isOnLedLCD =  TRUE;
+			LCD_LED_ON;
 			CLCD_Clear();
 			Print_LCD( 1, 0, "Cheacking RFID");
 			char PrintbufferRFID[16];
-			completePass = TRUE;
 			sprintf(&PrintbufferRFID[0],"%x-%x-%x-%x-%x",CardID[0], CardID[1], CardID[2], CardID[3], CardID[4]);			
 			Print_LCD(1,1,&PrintbufferRFID[0]);
 			useBuzz(3);
 			int result = checkCardRfid(CardID);
-			//int result = compareCard_RFID(CardID,true_CardID);
 			if(result == 1){	// true card
 				Open();
 				useBuzz(3);
