@@ -74,7 +74,9 @@ void config_GPIO_Other()
 uint8_t isClick = FALL;
 uint8_t keyChar = NULL;
 uint64_t lastButtonPressTime = 0;
-const uint16_t PIN_OUT_SCAN[4] = {KEY_ROW1_PIN, KEY_ROW2_PIN, KEY_ROW3_PIN, KEY_ROW4_PIN};
+const uint16_t PIN_OUT_SCAN[3] = {KEY_COL1_PIN,KEY_COL2_PIN,KEY_COL3_PIN};
+ uint16_t PIN_COL_SCAN[3] = {KEY_COL1_PIN,KEY_COL2_PIN,KEY_COL3_PIN};
+ uint16_t PIN_ROW_SCAN[4] = {KEY_ROW1_PIN,KEY_ROW2_PIN,KEY_ROW3_PIN,KEY_ROW4_PIN};
 const uint8_t KEY_MAP[4][3] = {
 	{'1', '2', '3'},
 	{'4', '5', '6'},
@@ -83,77 +85,119 @@ const uint8_t KEY_MAP[4][3] = {
 void Connfig_KEY_Pin()
 {
 	__HAL_RCC_GPIOB_CLK_ENABLE();
+	__HAL_RCC_GPIOA_CLK_ENABLE();
 	GPIO_InitTypeDef GPIO_Key = {0};
-	GPIO_Key.Pin = KEY_ROW1_PIN|KEY_ROW2_PIN|KEY_ROW3_PIN|KEY_ROW4_PIN;
+	GPIO_Key.Pin = KEY_COL1_PIN|KEY_COL2_PIN|KEY_COL3_PIN;
 	GPIO_Key.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_Key.Pull = GPIO_NOPULL;
-	GPIO_Key.Speed = GPIO_SPEED_FREQ_HIGH;
-	HAL_GPIO_Init(KEY_ROW_PORT, &GPIO_Key);
-	//Config COL Input
-	GPIO_Key.Pin = KEY_COL1_PIN|KEY_COL2_PIN|KEY_COL3_PIN;
-	GPIO_Key.Mode = GPIO_MODE_INPUT;
-	GPIO_Key.Pull = GPIO_PULLDOWN;
+	GPIO_Key.Speed = GPIO_SPEED_FREQ_MEDIUM;
 	HAL_GPIO_Init(KEY_COL_PORT, &GPIO_Key);
+	HAL_GPIO_WritePin(KEY_COL_PORT,KEY_COL1_PIN|KEY_COL2_PIN|KEY_COL3_PIN,GPIO_PIN_SET);
+	//Config COL Input
+	GPIO_Key.Pin = KEY_ROW1_PIN|KEY_ROW2_PIN|KEY_ROW3_PIN|KEY_ROW4_PIN;
+	GPIO_Key.Mode = GPIO_MODE_INPUT;
+	GPIO_Key.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(KEY_ROW_PORT, &GPIO_Key);
 }
-uint8_t ScanKEY() // Qu?t ph?m v? tra ve mang MAP
+uint8_t ScanKEY()
 {
-	isClick = FALL;
-	uint8_t couter = 0;
-	uint8_t click_COL =0;
-	for (couter = 0; couter < 4; couter++)
-	{
-		HAL_GPIO_WritePin(KEY_ROW_PORT, PIN_OUT_SCAN[couter], GPIO_PIN_SET);
-		if (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL1_PIN))
-		{
-			BUZZ_ON;
-			HAL_Delay(50);
-			isClick = TRUE;
-			click_COL = 0;
-			BUZZ_OFF;
-			int coutTime = 0;
-			while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL1_PIN)){
-				coutTime++;
-				HAL_Delay(50);
-				if(coutTime>30)
-					useBuzz(3);
-			
+	uint8_t colum = 0;//3 output
+	uint8_t row = 0;//4 input
+	uint8_t value = 0;
+	for(colum = 0;colum<3;colum++){
+		//HAL_Delay(3);
+		HAL_GPIO_WritePin(KEY_COL_PORT,PIN_COL_SCAN[colum],GPIO_PIN_RESET);
+		for(row = 0;row<4;row++){
+			//HAL_Delay(5);
+			if(HAL_GPIO_ReadPin(KEY_ROW_PORT,PIN_ROW_SCAN[row])==0){
+				//HAL_Delay(1);
+				//if(HAL_GPIO_ReadPin(KEY_ROW_PORT,PIN_ROW_SCAN[row])==0){	// kiem tra lai nut nhan
+					BUZZ_ON;
+					HAL_Delay(50);
+					BUZZ_OFF; 
+					isClick = TRUE;
+					while(HAL_GPIO_ReadPin(KEY_ROW_PORT,PIN_ROW_SCAN[row])==0);
+					value = KEY_MAP[row][colum];
+					HAL_GPIO_WritePin(KEY_COL_PORT,KEY_COL1_PIN|KEY_COL2_PIN|KEY_COL3_PIN,GPIO_PIN_SET);
+					return value;
+				//}
 			}
-			if(couter == 3 && click_COL == 0 && coutTime > 30 && enabel_Menu == 1)
-			{
-				begin_gotoMenu();
-			}
-			return KEY_MAP[couter][click_COL];
 		}
-		else if (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL2_PIN))
-		{
-			BUZZ_ON;
-			HAL_Delay(50);
-			isClick = TRUE;
-			click_COL = 1;
-			BUZZ_OFF;
-			while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL2_PIN)){}
-
-			return KEY_MAP[couter][click_COL];
-				
-			//break;
-		}
-		else if (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL3_PIN))
-		{
-			BUZZ_ON;
-			HAL_Delay(50);
-			isClick = TRUE;
-			click_COL = 2;
-			BUZZ_OFF;
-			while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL3_PIN)){}
-			
-			return KEY_MAP[couter][click_COL];
-			//break;
-		}
-		HAL_GPIO_WritePin(KEY_ROW_PORT, PIN_OUT_SCAN[couter], GPIO_PIN_RESET);
+		isClick = FALL;
+		HAL_GPIO_WritePin(KEY_COL_PORT,PIN_COL_SCAN[colum],GPIO_PIN_SET);
+		//HAL_Delay(5);
 	}
-	
-	return NULL;
+	return 0;
+
 }
+// uint8_t ScanKEY() // Qu?t ph?m v? tra ve mang MAP
+// {
+// 	uint8_t couter = 0;
+// 	uint8_t click_COL =0;
+// 	for (couter = 0; couter < 4; couter++)
+// 	{
+// //		uint16_t portA = GPIOA->ODR;
+// //		portA = portA | 0x0400;
+// //		GPIOA->ODR = portA;
+// 		HAL_GPIO_WritePin(KEY_ROW_PORT, PIN_OUT_SCAN[couter], GPIO_PIN_RESET);
+// 		if (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL1_PIN)==0)
+// 		{
+// 			click_COL = 0;
+// 			BUZZ_ON;
+// 			HAL_Delay(30);
+// 			isClick = TRUE;
+			
+// 			BUZZ_OFF;
+// 			if(couter == 3){
+// 				int coutTime = 0;
+// 				while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL1_PIN)==0){
+// 					coutTime++;
+// 					HAL_Delay(30);
+// 					if(coutTime>30)
+// 						useBuzz(3);
+				
+// 				}
+// 				if(click_COL == 0 && coutTime > 30 && enabel_Menu == 1)
+// 				{
+// 					begin_gotoMenu();
+// 					return NULL;
+// 				}
+// 			}else{while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL1_PIN)==0);}
+// 			return KEY_MAP[couter][click_COL];
+// 		}
+// 		else if (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL2_PIN)==0)
+// 		{
+// 			click_COL = 1;
+// 			BUZZ_ON;
+// 			HAL_Delay(30);
+// 			isClick = TRUE;
+			
+// 			BUZZ_OFF;
+// 			while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL2_PIN)==0){}
+
+// 			return KEY_MAP[couter][click_COL];
+				
+// 			//break;
+// 		}
+// 		else if (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL3_PIN)==0)
+// 		{
+// 			click_COL = 2;
+// 			BUZZ_ON;
+// 			HAL_Delay(30);
+// 			isClick = TRUE;
+			
+// 			BUZZ_OFF;
+// 			while (HAL_GPIO_ReadPin(KEY_COL_PORT, KEY_COL3_PIN)==0){}
+			
+// 			return KEY_MAP[couter][click_COL];
+// 			//break;
+// 		}
+// 		HAL_GPIO_WritePin(KEY_ROW_PORT, PIN_OUT_SCAN[couter], GPIO_PIN_SET);
+// 		HAL_Delay(10);
+// 	}
+	
+// 	return NULL;
+// }
 //=====================================================
 // LCD Function and variabel
 extern CLCD_Name LCD;
@@ -876,7 +920,6 @@ int main(void)
 	//saveCardRfid(true_CardID);
 	
 	//TM_MFRC522_Reset();
-	HAL_Delay(1000);
 	TM_MFRC522_Init();
 	useBuzz(2);
 	CLCD_Clear();	
@@ -890,14 +933,19 @@ int main(void)
 		{
 			isOnLedLCD = TRUE;
 			if(isClick ==  TRUE){
+//				if(keyChar == '*'){
+//					useBuzz(3); // thông báo vào mennu
+//					begin_gotoMenu();
+//				}
 				if(couter_pass < NUM_PASS && keyChar != '*'){
 					if(keyChar == '#'){
+						if(couter_pass>0){
 						couter_pass--;
 						pass[couter_pass] = '*';
-						
+						}
 					}else{
 						pass[couter_pass] = keyChar;
-						couter_pass++;
+						//couter_pass++;
 					}					
 					CLCD_Clear();
 					Print_LCD( 1, 0, "INPUT KEY CODE");
