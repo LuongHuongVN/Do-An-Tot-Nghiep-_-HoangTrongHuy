@@ -275,7 +275,7 @@ void addCard_RFID()
 					// }
 					debugROM();
 					saveCardRfid(_CardID);
-					debugROM();
+					//debugROM();
 					// if(saveCardRfid(_CardID)==1){
 					// 	CLCD_Clear();
 					// 	Print_LCD(0,0," Thanh Cong\0");
@@ -283,7 +283,9 @@ void addCard_RFID()
 					// 	CLCD_Clear();
 					// 	Print_LCD(0,0,"Luu The FALL\0");
 					// }
-					
+					HAL_Delay(1000);
+					CLCD_Clear();	
+					Print_LCD( 1, 0, "MOI NHAP KEY");
 					break;
 				}else if(key == '#'){
 					CLCD_Clear();
@@ -397,8 +399,8 @@ void Open()
 }
 void Close()
 {
-	CLCD_Clear();
-	Print_LCD( 4, 0, "PASS ERROR");
+	//CLCD_Clear();
+	//Print_LCD( 4, 0, "PASS ERROR");
 	RELAY_OFF;
 }
 void useBuzz(int n)
@@ -573,17 +575,21 @@ void changeKeyPass()
 					char key = ScanKEY();
 					if(key == '*'){
 						//strcpy(truePass,passChange);	// save pass
-						savePass(passChange);
+						if(savePass(passChange) == 1 ){
 						getPass(truePass);
 						Print_LCD(0,0," Thanh Cong\0");
 						break;
+						}else{
+						Print_LCD(0,0," That Bai\0");
+						break;
+						}
 					}else if(key == '#'){
 					
 						Print_LCD(0,0,"Huy Thay Doi\0");
 						break;		
 					}
 				}
-				return;
+				//return;
 				// save
 				
 			}
@@ -616,10 +622,10 @@ uint8_t savePass(char pass[])
 	uint8_t isEqual = strcmp(CheckPass,pass);
 	CLCD_Clear();
 	if(isEqual == 0){
-		Print_LCD(0,0,"Save Pass OK");
+		//Print_LCD(0,0,"Save Pass OK");
 		return 1;
 	}
-	Print_LCD(0,0,"Save Pass ERROR");
+	//Print_LCD(0,0,"Save Pass ERROR");
 	HAL_Delay(1000);
 	return 0;
 }
@@ -785,7 +791,7 @@ void checkERRORpass()
 		enabel_Menu = 0;
 		enabel_Pass = 0;
 		CLCD_Clear();
-		LCD_LED_ON;
+		//LCD_LED_ON;
 		// Print_LCD(0,0,"Sai Pass 3 Lan\0");
 		// Print_LCD(0,1,"Nhap Key Master\0");
 		// useBuzz(3);
@@ -804,9 +810,11 @@ void checkERRORpass()
 			// if (currentTime - startTime >= 60000)
 			// 	break;
 			key = ScanKEY();
+			
 		//isOnLedLCD = isClick;
 			if(key != NULL)
 			{
+				LCD_LED_ON;
 				if(couter_pass < NUM_PASS && key != '*'){
 					if(key == '#'){
 						couter_pass--;
@@ -829,6 +837,9 @@ void checkERRORpass()
 						AT24_write(&rom,PASS_STATE_ADR,PASS_OK);
 						enabel_Menu = 1;
 						enabel_Pass = 1;
+						CLCD_Clear();
+						Print_LCD( 1, 0, "MOI NHAP KEY");
+						//Print_LCD(0,1,"Nhap Lai\0");
 						break;
 					}else{
 						
@@ -890,7 +901,27 @@ Print_LCD( 1, 0, "OF RELAY");
 RELAY_OFF;
 //check 
 }
-
+void actionFallPass()
+{
+	LCD_LED_ON;
+	BUZZ_ON;
+	CLCD_Clear();
+	Print_LCD(0,0,"Sai Mat Khau");
+	Print_LCD(0,1,"Nhap Lai Mat Khau");
+	uint32_t startTime = HAL_GetTick();
+	while(1)
+	{
+		uint32_t currentTime = HAL_GetTick();
+		if (currentTime - startTime >= 5000)
+			break;
+		if(ScanKEY() != NULL)
+			break;
+	}
+	LCD_LED_OFF;
+	BUZZ_OFF;
+	CLCD_Clear();
+	Print_LCD( 1, 0, "MOI NHAP KEY");
+}
 /**
   * @brief  The application entry point.
   * @retval int
@@ -933,10 +964,10 @@ int main(void)
 		{
 			isOnLedLCD = TRUE;
 			if(isClick ==  TRUE){
-//				if(keyChar == '*'){
-//					useBuzz(3); // thông báo vào mennu
-//					begin_gotoMenu();
-//				}
+				if(keyChar == '*'){
+					useBuzz(3); // thông báo vào mennu
+					begin_gotoMenu();
+				}
 				if(couter_pass < NUM_PASS && keyChar != '*'){
 					if(keyChar == '#'){
 						if(couter_pass>0){
@@ -945,7 +976,7 @@ int main(void)
 						}
 					}else{
 						pass[couter_pass] = keyChar;
-						//couter_pass++;
+						couter_pass++;
 					}					
 					CLCD_Clear();
 					Print_LCD( 1, 0, "INPUT KEY CODE");
@@ -964,6 +995,7 @@ int main(void)
 						Print_LCD( 1, 0, "MOI NHAP KEY");
 					}else{
 						cout_err_Pass ++;
+						actionFallPass();
 						if(cout_err_Pass >= NUM_ERROR_PASS){
 							CLCD_Clear();
 							Print_LCD( 0, 0, "Sai Qua 3 Lan");
@@ -975,7 +1007,7 @@ int main(void)
 						couter_pass = 0;
 						strcpy(pass,define_pass);		// chuyen mang pass ve "******"
 						completePass = TRUE;
-						Print_LCD( 1, 0, "MOI NHAP KEY");
+						
 					}
 				}
 			}
